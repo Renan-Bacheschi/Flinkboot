@@ -263,4 +263,4 @@ public class MyFlinkJob {
 All configuration models enforce fail-fast validation at startup:
 - **`InvalidRestartStrategyPropertiesException`**: Thrown if restart strategy sub-blocks do not match the specified `type`.
 - **`InvalidStateBackendPropertiesException`**: Thrown if `custom-class` is provided when `type` is not `CUSTOM` (or missing when `type` is `CUSTOM`).
-- **`InvalidLocalWebUiPropertiesException`**: Thrown if WebUI settings are invalid.
+- **`UnsupportedExecutionEnvironmentException`**: Thrown if `local-web-ui.enabled=true` is used in a Flink cluster environment.
