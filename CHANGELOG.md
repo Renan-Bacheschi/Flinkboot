@@ -22,10 +22,13 @@ All notable user-facing changes to this project are documented in this file.
 - **[flinkboot-fluss] Streamlined `FlussSinkProperties` & Relocate Client Tuning**: Removed top-level `batch-size` and `batch-timeout` fields from `FlussSinkProperties`. Vendor client tuning must now be configured directly under `properties: Map<String, String>`.
 - **[flinkboot-fluss] Modernized `FlussStartupMode.offsetsInitializer()` Contract**: Returns `Optional<OffsetsInitializer>` instead of a nullable instance (`Optional.empty()` for `TIMESTAMP` mode), eliminating NPE hazards.
 - **[connectors] Final Configuration DTO Classes**: Enforced `final` class modifier on all connector configuration DTOs (`KafkaSourceProperties`, `KafkaSinkProperties`, `FlussSourceProperties`, `FlussSinkProperties`).
+- **[configuration] Removal of Domain Validation Exceptions**: Removed DTO-specific validation exceptions (`InvalidExecutionPropertiesException`, `InvalidRestartStrategyPropertiesException`, `InvalidStateBackendPropertiesException`, `InvalidFlussSourcePropertiesException`, `InvalidKafkaSinkPropertiesException`, `InvalidKafkaSourcePropertiesException`). Cross-field validations are now evaluated uniformly via Jakarta Bean Validation and reported through `ConfigurationValidationException`.
+- **[flinkboot-kafka & fluss] Removed Empty Exception Packages**: Removed packages `io.github.sekelenao.flinkboot.kafka.api.exception` and `io.github.sekelenao.flinkboot.fluss.api.exception` following the elimination of connector domain validation exceptions.
 
 ### 🟢 Features & Enhancements
 - **[flinkboot-core] Disable Configuration Validation Flag**: Added `--flinkboot-configuration-disable-validation` CLI flag and `FLINKBOOT_CONFIGURATION_DISABLE_VALIDATION` environment variable to bypass Jakarta Bean Validation during configuration deserialization.
-- **[flinkboot-core] Execution Parallelism Validation**: Enforces that `parallelism` cannot exceed `max-parallelism` when both are defined in `ExecutionProperties`, throwing `InvalidExecutionPropertiesException`.
+- **[flinkboot-core] Self-Validating Configuration Contract (`@ValidConfiguration` & `ValidatableProperties`)**: Added `ValidConfiguration` constraint annotation and `ValidatableProperties` interface in package `io.github.sekelenao.flinkboot.core.api.validation` allowing configuration DTOs to declare cross-field Bean Validation rules evaluated during configuration loading.
+- **[flinkboot-core] Execution Parallelism Validation**: Enforces that `parallelism` cannot exceed `max-parallelism` when both are defined in `ExecutionProperties`.
 - **[flinkboot-core] Windows Path Normalization**: Seamless support for RFC 8089 file URIs (`file:///C:/...`), leading slashes, and UNC network shares on Windows without altering POSIX behavior.
 - **[flinkboot-test] Generic & Custom Type Assertions**: Added `TypeInformationAssert<T>`, `assertThat(TypeHint<T>)`, and `assertThat(TypeInformation<T>)` to verify types whose generic parameters are erased by a `Class` literal.
 - **[configuration] Strict Duration Validation (`@DurationMin`)**: Validates `Duration` configuration properties across all modules, rejecting negative and zero values on strict intervals and timeouts.
@@ -44,6 +47,7 @@ All notable user-facing changes to this project are documented in this file.
 - **[flinkboot-core] Supported URI Schemes in Error Message**: Clarified supported URI prefixes (`classpath:`, `file:`) in `UnrecognizedResourceException` detail messages.
 - **[flinkboot-test] Classpath Fallback**: Calling `FlinkbootTest.configuration(Class<?> type)` without arguments correctly falls back to `classpath:job-configuration.yaml`.
 - **[flinkboot-test] Null Configuration Path Rejection**: Rejects null configuration path elements with `NullPointerException` before attempting to load resources.
+- **[configuration] Unified Cross-Field Error Reporting**: Cross-field configuration constraints are now collected and reported alongside field-level validation errors in a single diagnostic report instead of interrupting deserialization prematurely.
 
 ---
 
