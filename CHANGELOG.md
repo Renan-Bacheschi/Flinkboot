@@ -11,6 +11,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 #### `flinkboot-core`
 - Normalize leading slashes before Windows drive letters in `FileSystemResource` to support standard URI and multi-slash path formats on Windows.
+- Throw dedicated `CommandLineParsingException` instead of `NoSuchElementException` when a CLI option is passed without a value.
 
 #### `flinkboot-test`
 - Reject null configuration path elements with `NullPointerException` before attempting to load resources.
