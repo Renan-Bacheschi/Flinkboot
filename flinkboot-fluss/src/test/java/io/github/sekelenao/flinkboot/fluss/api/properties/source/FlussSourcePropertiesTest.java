@@ -8,7 +8,9 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
+import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -358,6 +360,64 @@ class FlussSourcePropertiesTest {
             var servers = props.bootstrapServers();
             assertNotNull(servers, "bootstrapServers() should never return null even if supplied null in ctor");
             assertTrue(servers.isEmpty(), "Expected empty list when bootstrapServers is null");
+        }
+
+        @Test
+        @DisplayName("Should return unmodifiable bootstrap-servers list")
+        void shouldReturnUnmodifiableBootstrapServers() {
+            var props = new FlussSourceProperties(
+                    "src",
+                    new ArrayList<>(List.of("localhost:9123")),
+                    "db",
+                    "tbl",
+                    FlussStartupMode.EARLIEST,
+                    null,
+                    Map.of()
+            );
+
+            var servers = props.bootstrapServers();
+            assertThrows(UnsupportedOperationException.class, () -> servers.add("other:9123"));
+        }
+    }
+
+    @Nested
+    @DisplayName("Properties")
+    class PropertiesTests {
+
+        @Test
+        @DisplayName("Should return unmodifiable properties map")
+        void shouldReturnUnmodifiableProperties() {
+            var props = new FlussSourceProperties(
+                    "src",
+                    List.of("localhost:9123"),
+                    "db",
+                    "tbl",
+                    FlussStartupMode.EARLIEST,
+                    null,
+                    new HashMap<>(Map.of("k", "v"))
+            );
+
+            var map = props.properties();
+            assertThrows(UnsupportedOperationException.class, () -> map.put("new", "val"));
+        }
+
+        @Test
+        @DisplayName("Should return empty unmodifiable map when properties is null")
+        void shouldReturnEmptyMapWhenPropertiesIsNull() {
+            var props = new FlussSourceProperties(
+                    "src",
+                    List.of("localhost:9123"),
+                    "db",
+                    "tbl",
+                    FlussStartupMode.EARLIEST,
+                    null,
+                    null
+            );
+
+            var map = props.properties();
+            assertNotNull(map, "properties() should never return null");
+            assertTrue(map.isEmpty(), "Expected empty map when constructed with null properties");
+            assertThrows(UnsupportedOperationException.class, () -> map.put("k", "v"), "Returned map must be unmodifiable");
         }
     }
 }

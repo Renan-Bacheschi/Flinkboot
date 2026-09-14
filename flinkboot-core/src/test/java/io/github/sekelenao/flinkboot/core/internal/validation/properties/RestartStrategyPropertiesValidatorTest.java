@@ -114,6 +114,10 @@ class RestartStrategyPropertiesValidatorTest {
             var props = new RestartStrategyProperties(RestartStrategyType.FIXED_DELAY, fixed, failure, null);
 
             assertFalse(RestartStrategyPropertiesValidator.validate(props, context));
+            verify(context).disableDefaultConstraintViolation();
+            verify(context).buildConstraintViolationWithTemplate(
+                "Cannot specify failure-rate or exponential-delay when restart strategy type is FIXED_DELAY"
+            );
         }
 
         @Test
@@ -125,6 +129,10 @@ class RestartStrategyPropertiesValidatorTest {
             var props = new RestartStrategyProperties(RestartStrategyType.FAILURE_RATE, fixed, failure, null);
 
             assertFalse(RestartStrategyPropertiesValidator.validate(props, context));
+            verify(context).disableDefaultConstraintViolation();
+            verify(context).buildConstraintViolationWithTemplate(
+                "Cannot specify fixed-delay or exponential-delay when restart strategy type is FAILURE_RATE"
+            );
         }
 
         @Test
@@ -136,6 +144,10 @@ class RestartStrategyPropertiesValidatorTest {
             var props = new RestartStrategyProperties(RestartStrategyType.EXPONENTIAL_DELAY, null, failure, expo);
 
             assertFalse(RestartStrategyPropertiesValidator.validate(props, context));
+            verify(context).disableDefaultConstraintViolation();
+            verify(context).buildConstraintViolationWithTemplate(
+                "Cannot specify fixed-delay or failure-rate when restart strategy type is EXPONENTIAL_DELAY"
+            );
         }
 
         @Test
@@ -146,6 +158,10 @@ class RestartStrategyPropertiesValidatorTest {
             var props = new RestartStrategyProperties(RestartStrategyType.EXPONENTIAL_DELAY, null, null, expo);
 
             assertFalse(RestartStrategyPropertiesValidator.validate(props, context));
+            verify(context).disableDefaultConstraintViolation();
+            verify(context).buildConstraintViolationWithTemplate(
+                "max-backoff cannot be smaller than initial-backoff in exponential-delay restart strategy"
+            );
         }
     }
 }

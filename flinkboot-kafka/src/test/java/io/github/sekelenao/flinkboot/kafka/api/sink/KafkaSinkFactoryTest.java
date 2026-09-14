@@ -7,6 +7,8 @@ import org.apache.kafka.clients.producer.ProducerRecord;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.EnumSource;
 
 import java.util.List;
 import java.util.Map;
@@ -59,20 +61,19 @@ class KafkaSinkFactoryTest {
             assertNotNull(KafkaSinkFactory.supplyFor(config, TEST_SCHEMA));
         }
 
-        @Test
+        @ParameterizedTest
+        @EnumSource(value = KafkaDeliveryGuarantee.class, names = {"NONE", "AT_LEAST_ONCE"})
         @DisplayName("Should successfully build with NONE and AT_LEAST_ONCE delivery guarantees")
-        void shouldBuildWithOtherGuarantees() {
-            for (var guarantee : List.of(KafkaDeliveryGuarantee.NONE, KafkaDeliveryGuarantee.AT_LEAST_ONCE)) {
-                var config = new KafkaSinkProperties(
-                    "my-sink",
-                    List.of("localhost:9092"),
-                    "my-topic",
-                    guarantee,
-                    null,
-                    null
-                );
-                assertNotNull(KafkaSinkFactory.supplyFor(config, TEST_SCHEMA));
-            }
+        void shouldBuildWithOtherGuarantees(KafkaDeliveryGuarantee guarantee) {
+            var config = new KafkaSinkProperties(
+                "my-sink",
+                List.of("localhost:9092"),
+                "my-topic",
+                guarantee,
+                null,
+                null
+            );
+            assertNotNull(KafkaSinkFactory.supplyFor(config, TEST_SCHEMA));
         }
 
         @Test
