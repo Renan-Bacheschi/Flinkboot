@@ -17,7 +17,7 @@ public final class StateBackendPropertiesValidator {
         var typeOpt = properties.type();
         var customClassOpt = properties.customClass();
         var isCustom = typeOpt.isPresent() && typeOpt.get() == StateBackendType.CUSTOM;
-        var hasCustomClass = customClassOpt.isPresent() && !customClassOpt.get().isBlank();
+        var hasCustomClass = customClassOpt.isPresent();
 
         if (isCustom && !hasCustomClass) {
             return PropertiesValidator.reject(

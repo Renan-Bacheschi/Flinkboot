@@ -92,6 +92,20 @@ class RestartStrategyPropertiesValidatorTest {
         }
 
         @Test
+        @DisplayName("Should return false when sub-configuration provided without type")
+        void shouldFailWhenSubConfigProvidedWithoutType() {
+            var context = createMockContext();
+            var fixed = new FixedDelayRestartProperties(3, Duration.ofSeconds(5));
+            var props = new RestartStrategyProperties(null, fixed, null, null);
+
+            assertFalse(RestartStrategyPropertiesValidator.validate(props, context));
+            verify(context).disableDefaultConstraintViolation();
+            verify(context).buildConstraintViolationWithTemplate(
+                "restart strategy type is required when configuring a sub-block (fixed-delay, failure-rate, exponential-delay)"
+            );
+        }
+
+        @Test
         @DisplayName("Should return false when failure-rate is provided for FIXED_DELAY")
         void shouldFailWhenFailureRateProvidedForFixedDelay() {
             var context = createMockContext();

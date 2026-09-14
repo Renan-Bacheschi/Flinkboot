@@ -8,6 +8,8 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 
 import java.util.Collections;
 import java.util.HashMap;
@@ -187,6 +189,31 @@ class KafkaSourcePropertiesTest {
                 () -> assertTrue(violations.stream().anyMatch(v ->
                     v.getPropertyPath().toString().equals("topics")
                         && v.getMessage().equals("Either 'topics' or 'topic-pattern' must be specified")
+                ))
+            );
+        }
+
+        @ParameterizedTest
+        @ValueSource(strings = {"", "   ", "\t\n"})
+        @DisplayName("Should fail validation when topic-pattern is empty or blank")
+        void shouldFailValidationWhenTopicPatternIsBlank(String pattern) {
+            var props = new KafkaSourceProperties(
+                "my-source",
+                List.of("localhost:9092"),
+                "my-group",
+                null,
+                pattern,
+                KafkaOffsetInitializer.EARLIEST,
+                null,
+                null,
+                null
+            );
+            var violations = validator.validate(props);
+            assertAll(
+                () -> assertEquals(1, violations.size()),
+                () -> assertTrue(violations.stream().anyMatch(v ->
+                    v.getPropertyPath().toString().equals("topicPattern")
+                        && v.getMessage().equals("must not be blank")
                 ))
             );
         }

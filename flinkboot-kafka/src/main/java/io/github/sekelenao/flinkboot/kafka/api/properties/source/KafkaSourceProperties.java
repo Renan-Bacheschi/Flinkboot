@@ -10,6 +10,7 @@ import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotEmpty;
 import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.PositiveOrZero;
 
 import java.io.Serializable;
@@ -39,6 +40,7 @@ public final class KafkaSourceProperties implements Serializable, ValidatablePro
 
     private final List<@NotBlank String> topics;
 
+    @Pattern(regexp = "\\s*\\S.*", message = "must not be blank")
     private final String topicPattern;
 
     @NotNull

@@ -6,6 +6,7 @@ import io.github.sekelenao.flinkboot.core.api.validation.ValidatableProperties;
 import io.github.sekelenao.flinkboot.core.internal.annotation.Generated;
 import io.github.sekelenao.flinkboot.core.internal.validation.properties.StateBackendPropertiesValidator;
 import jakarta.validation.ConstraintValidatorContext;
+import jakarta.validation.constraints.Pattern;
 
 import java.io.Serializable;
 import java.util.Objects;
@@ -25,6 +26,7 @@ public final class StateBackendProperties implements Serializable, ValidatablePr
     private final CheckpointStorageType checkpointStorage;
     private final Boolean incremental;
     private final Boolean latencyTracking;
+    @Pattern(regexp = "\\s*\\S.*", message = "must not be blank")
     private final String customClass;
 
     /**

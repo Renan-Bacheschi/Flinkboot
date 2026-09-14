@@ -9,9 +9,7 @@ import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.EnumSource;
-import org.junit.jupiter.params.provider.NullAndEmptySource;
 import org.junit.jupiter.params.provider.NullSource;
-import org.junit.jupiter.params.provider.ValueSource;
 
 import java.lang.reflect.InvocationTargetException;
 
@@ -63,15 +61,23 @@ class StateBackendPropertiesValidatorTest {
             assertTrue(StateBackendPropertiesValidator.validate(props, context));
         }
 
-        @ParameterizedTest
-        @NullAndEmptySource
-        @ValueSource(strings = {"   ", "\t\n"})
-        @DisplayName("Should pass when state backend is non-CUSTOM and customClass is null or blank")
-        void shouldPassWhenNonCustomAndCustomClassBlank(String customClass) {
+        @Test
+        @DisplayName("Should fail when state backend is non-CUSTOM and customClass is empty string")
+        void shouldFailWhenNonCustomAndCustomClassEmpty() {
             var context = mock(ConstraintValidatorContext.class);
-            var props = new StateBackendProperties(StateBackendType.ROCKSDB, CheckpointStorageType.FILESYSTEM, true, false, customClass);
+            var builder = mock(ConstraintValidatorContext.ConstraintViolationBuilder.class);
+            var nodeBuilder = mock(ConstraintValidatorContext.ConstraintViolationBuilder.NodeBuilderCustomizableContext.class);
 
-            assertTrue(StateBackendPropertiesValidator.validate(props, context));
+            when(context.buildConstraintViolationWithTemplate(anyString())).thenReturn(builder);
+            when(builder.addPropertyNode("customClass")).thenReturn(nodeBuilder);
+
+            var props = new StateBackendProperties(StateBackendType.ROCKSDB, CheckpointStorageType.FILESYSTEM, true, false, "");
+
+            assertFalse(StateBackendPropertiesValidator.validate(props, context));
+            verify(context).disableDefaultConstraintViolation();
+            verify(context).buildConstraintViolationWithTemplate("custom-class can only be specified when state backend type is CUSTOM");
+            verify(builder).addPropertyNode("customClass");
+            verify(nodeBuilder).addConstraintViolation();
         }
 
         @Test
@@ -83,11 +89,9 @@ class StateBackendPropertiesValidatorTest {
             assertTrue(StateBackendPropertiesValidator.validate(props, context));
         }
 
-        @ParameterizedTest
-        @NullAndEmptySource
-        @ValueSource(strings = {"   ", "\t\n"})
-        @DisplayName("Should fail when state backend is CUSTOM and customClass is null or blank")
-        void shouldFailWhenCustomAndCustomClassNullOrBlank(String customClass) {
+        @Test
+        @DisplayName("Should fail when state backend is CUSTOM and customClass is null")
+        void shouldFailWhenCustomAndCustomClassNull() {
             var context = mock(ConstraintValidatorContext.class);
             var builder = mock(ConstraintValidatorContext.ConstraintViolationBuilder.class);
             var nodeBuilder = mock(ConstraintValidatorContext.ConstraintViolationBuilder.NodeBuilderCustomizableContext.class);
@@ -95,7 +99,7 @@ class StateBackendPropertiesValidatorTest {
             when(context.buildConstraintViolationWithTemplate(anyString())).thenReturn(builder);
             when(builder.addPropertyNode("customClass")).thenReturn(nodeBuilder);
 
-            var props = new StateBackendProperties(StateBackendType.CUSTOM, null, null, null, customClass);
+            var props = new StateBackendProperties(StateBackendType.CUSTOM, null, null, null, null);
 
             assertFalse(StateBackendPropertiesValidator.validate(props, context));
             verify(context).disableDefaultConstraintViolation();

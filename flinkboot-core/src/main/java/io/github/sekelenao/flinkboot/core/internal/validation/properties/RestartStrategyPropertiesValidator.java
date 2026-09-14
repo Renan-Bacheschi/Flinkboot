@@ -35,9 +35,16 @@ public final class RestartStrategyPropertiesValidator {
     }
 
     private boolean validateNoSubConfiguration(RestartStrategyType type) {
-        if (properties.fixedDelay().isPresent()
-                || properties.failureRate().isPresent()
-                || properties.exponentialDelay().isPresent()) {
+        var fixedDelayPresent = properties.fixedDelay().isPresent();
+        var failureRatePresent = properties.failureRate().isPresent();
+        var exponentialDelayPresent = properties.exponentialDelay().isPresent();
+        if (fixedDelayPresent || failureRatePresent || exponentialDelayPresent) {
+            if (properties.type().isEmpty()) {
+                return reject(
+                    "type",
+                    "restart strategy type is required when configuring a sub-block (fixed-delay, failure-rate, exponential-delay)"
+                );
+            }
             return reject(
                 "type",
                 "No sub-configuration (fixed-delay, failure-rate, exponential-delay) must be specified when restart strategy type is " + type

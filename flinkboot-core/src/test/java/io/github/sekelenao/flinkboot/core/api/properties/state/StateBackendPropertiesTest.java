@@ -172,12 +172,10 @@ class StateBackendPropertiesTest {
             );
         }
 
-        @ParameterizedTest
-        @NullAndEmptySource
-        @ValueSource(strings = {"   ", "\t\n"})
-        @DisplayName("Should fail validation when custom-class is null, empty, or blank for CUSTOM state backend")
-        void shouldFailValidationWhenCustomClassNullOrBlankForCustomType(String customClass) {
-            var config = new StateBackendProperties(StateBackendType.CUSTOM, null, null, null, customClass);
+        @Test
+        @DisplayName("Should fail validation when custom-class is null for CUSTOM state backend")
+        void shouldFailValidationWhenCustomClassNullForCustomType() {
+            var config = new StateBackendProperties(StateBackendType.CUSTOM, null, null, null, null);
             var violations = validator.validate(config);
 
             assertAll(
@@ -185,6 +183,22 @@ class StateBackendPropertiesTest {
                 () -> assertTrue(violations.stream().anyMatch(v ->
                     v.getPropertyPath().toString().equals("customClass")
                         && v.getMessage().equals("custom-class must be specified when state backend type is CUSTOM")
+                ))
+            );
+        }
+
+        @ParameterizedTest
+        @ValueSource(strings = {"", "   ", "\t\n"})
+        @DisplayName("Should fail validation when custom-class is empty or blank for CUSTOM state backend")
+        void shouldFailValidationWhenCustomClassBlankForCustomType(String customClass) {
+            var config = new StateBackendProperties(StateBackendType.CUSTOM, null, null, null, customClass);
+            var violations = validator.validate(config);
+
+            assertAll(
+                () -> assertEquals(1, violations.size()),
+                () -> assertTrue(violations.stream().anyMatch(v ->
+                    v.getPropertyPath().toString().equals("customClass")
+                        && v.getMessage().equals("must not be blank")
                 ))
             );
         }
@@ -206,17 +220,15 @@ class StateBackendPropertiesTest {
             );
         }
 
-        @ParameterizedTest
-        @NullAndEmptySource
-        @ValueSource(strings = {"   ", "\t\n"})
-        @DisplayName("Should pass validation when custom-class is null or blank for non-CUSTOM state backend")
-        void shouldPassValidationWhenNullOrBlankCustomClassForNonCustomType(String customClass) {
+        @Test
+        @DisplayName("Should pass validation when custom-class is null for non-CUSTOM state backend")
+        void shouldPassValidationWhenNullCustomClassForNonCustomType() {
             var config = new StateBackendProperties(
                 StateBackendType.HASHMAP,
                 CheckpointStorageType.JOBMANAGER,
                 false,
                 true,
-                customClass
+                null
             );
 
             assertAll(
@@ -225,6 +237,26 @@ class StateBackendPropertiesTest {
                 () -> assertEquals(CheckpointStorageType.JOBMANAGER, config.checkpointStorage().orElseThrow()),
                 () -> assertTrue(validator.validate(config).isEmpty())
             );
+        }
+
+        @ParameterizedTest
+        @ValueSource(strings = {"", "   ", "\t\n"})
+        @DisplayName("Should fail validation when custom-class is empty or blank for non-CUSTOM state backend")
+        void shouldFailValidationWhenBlankCustomClassForNonCustomType(String customClass) {
+            var config = new StateBackendProperties(
+                StateBackendType.HASHMAP,
+                CheckpointStorageType.JOBMANAGER,
+                false,
+                true,
+                customClass
+            );
+
+            var violations = validator.validate(config);
+            assertFalse(violations.isEmpty());
+            assertTrue(violations.stream().anyMatch(v ->
+                v.getPropertyPath().toString().equals("customClass")
+                    && v.getMessage().equals("custom-class can only be specified when state backend type is CUSTOM")
+            ));
         }
     }
 
