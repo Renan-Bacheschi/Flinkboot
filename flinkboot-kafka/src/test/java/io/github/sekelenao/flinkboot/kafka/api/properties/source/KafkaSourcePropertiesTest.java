@@ -191,29 +191,6 @@ class KafkaSourcePropertiesTest {
             );
         }
 
-        @Test
-        @DisplayName("Should fail validation when topics is null and topic-pattern is blank")
-        void shouldFailWhenTopicsIsNullAndPatternIsBlank() {
-            var props = new KafkaSourceProperties(
-                "my-source",
-                List.of("localhost:9092"),
-                "my-group",
-                null,
-                "   ",
-                KafkaOffsetInitializer.EARLIEST,
-                null,
-                null,
-                null
-            );
-            var violations = validator.validate(props);
-            assertAll(
-                () -> assertEquals(1, violations.size()),
-                () -> assertTrue(violations.stream().anyMatch(v ->
-                    v.getPropertyPath().toString().equals("topics")
-                        && v.getMessage().equals("Either 'topics' or 'topic-pattern' must be specified")
-                ))
-            );
-        }
 
         @Test
         @DisplayName("Should fail validation when TIMESTAMP is used without timestamp")

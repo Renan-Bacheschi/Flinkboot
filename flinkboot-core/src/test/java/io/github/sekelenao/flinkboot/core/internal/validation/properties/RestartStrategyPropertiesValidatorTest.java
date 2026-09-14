@@ -30,12 +30,29 @@ class RestartStrategyPropertiesValidatorTest {
     class Constructor {
 
         @Test
-        @DisplayName("Should throw AssertionError when trying to instantiate via reflection")
-        void shouldThrowWhenInstantiatedViaReflection() throws Exception {
-            var constructor = RestartStrategyPropertiesValidator.class.getDeclaredConstructor();
+        @DisplayName("Should throw NullPointerException when properties is null")
+        void shouldThrowWhenPropertiesIsNull() throws Exception {
+            var constructor = RestartStrategyPropertiesValidator.class.getDeclaredConstructor(
+                RestartStrategyProperties.class,
+                ConstraintValidatorContext.class
+            );
             constructor.setAccessible(true);
-            var targetException = assertThrows(InvocationTargetException.class, constructor::newInstance);
-            assertInstanceOf(AssertionError.class, targetException.getCause());
+            var context = mock(ConstraintValidatorContext.class);
+            var targetException = assertThrows(InvocationTargetException.class, () -> constructor.newInstance(null, context));
+            assertInstanceOf(NullPointerException.class, targetException.getCause());
+        }
+
+        @Test
+        @DisplayName("Should throw NullPointerException when context is null")
+        void shouldThrowWhenContextIsNull() throws Exception {
+            var constructor = RestartStrategyPropertiesValidator.class.getDeclaredConstructor(
+                RestartStrategyProperties.class,
+                ConstraintValidatorContext.class
+            );
+            constructor.setAccessible(true);
+            var props = new RestartStrategyProperties(null, null, null, null);
+            var targetException = assertThrows(InvocationTargetException.class, () -> constructor.newInstance(props, null));
+            assertInstanceOf(NullPointerException.class, targetException.getCause());
         }
     }
 

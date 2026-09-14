@@ -37,9 +37,16 @@ In Flinkboot, all configuration classes that bind to YAML/JSON configuration fil
         return MyPropertiesValidator.validate(this, context);
     }
     ```
-  - Create a dedicated static validator utility class in `internal.validation.properties`:
-    - Private constructor throwing `new AssertionError("You cannot instantiate this class")`.
-    - Static method `public static boolean validate(MyProperties properties, ConstraintValidatorContext context)`.
+  - Create a dedicated validator class in `internal.validation.properties`:
+    - **Simple validators (single method)**:
+      - Private constructor throwing `new AssertionError("You cannot instantiate this class")`.
+      - Static method `public static boolean validate(MyProperties properties, ConstraintValidatorContext context)`.
+    - **Complex validators (> 1 method / sub-configurations)**:
+      - Store `properties` and `context` as `private final` fields.
+      - Private constructor validating non-null arguments via `Objects.requireNonNull(..., "... must not be null")`.
+      - Static facade `public static boolean validate(MyProperties properties, ConstraintValidatorContext context) { return new MyPropertiesValidator(properties, context).execute(); }`.
+      - Instance helper `reject(propertyName, message)` delegating to `PropertiesValidator.reject(context, propertyName, message)`.
+      - Format switch `case` branches on a single line (e.g. `case FIXED_DELAY: return validateFixedDelay();`).
     - Bind violations to property nodes via `PropertiesValidator.reject(context, "propertyName", "message")`.
     - Keep DTOs pure, clean data carriers without massive `if` blocks.
 

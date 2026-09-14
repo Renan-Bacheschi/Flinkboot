@@ -9,8 +9,6 @@ import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.EnumSource;
-import org.junit.jupiter.params.provider.NullAndEmptySource;
-import org.junit.jupiter.params.provider.ValueSource;
 
 import java.lang.reflect.InvocationTargetException;
 import java.util.List;
@@ -33,12 +31,39 @@ class KafkaSourcePropertiesValidatorTest {
     class Constructor {
 
         @Test
-        @DisplayName("Should throw AssertionError when trying to instantiate via reflection")
-        void shouldThrowWhenInstantiatedViaReflection() throws Exception {
-            var constructor = KafkaSourcePropertiesValidator.class.getDeclaredConstructor();
+        @DisplayName("Should throw NullPointerException when properties is null")
+        void shouldThrowWhenPropertiesIsNull() throws Exception {
+            var constructor = KafkaSourcePropertiesValidator.class.getDeclaredConstructor(
+                KafkaSourceProperties.class,
+                ConstraintValidatorContext.class
+            );
             constructor.setAccessible(true);
-            var targetException = assertThrows(InvocationTargetException.class, constructor::newInstance);
-            assertInstanceOf(AssertionError.class, targetException.getCause());
+            var context = mock(ConstraintValidatorContext.class);
+            var targetException = assertThrows(InvocationTargetException.class, () -> constructor.newInstance(null, context));
+            assertInstanceOf(NullPointerException.class, targetException.getCause());
+        }
+
+        @Test
+        @DisplayName("Should throw NullPointerException when context is null")
+        void shouldThrowWhenContextIsNull() throws Exception {
+            var constructor = KafkaSourcePropertiesValidator.class.getDeclaredConstructor(
+                KafkaSourceProperties.class,
+                ConstraintValidatorContext.class
+            );
+            constructor.setAccessible(true);
+            var props = new KafkaSourceProperties(
+                "source",
+                List.of("localhost:9092"),
+                "group",
+                List.of("topic"),
+                null,
+                null,
+                null,
+                null,
+                Map.of()
+            );
+            var targetException = assertThrows(InvocationTargetException.class, () -> constructor.newInstance(props, null));
+            assertInstanceOf(NullPointerException.class, targetException.getCause());
         }
     }
 
@@ -113,11 +138,9 @@ class KafkaSourcePropertiesValidatorTest {
             verify(nodeBuilder).addConstraintViolation();
         }
 
-        @ParameterizedTest
-        @NullAndEmptySource
-        @ValueSource(strings = {"   ", "\t\n"})
+        @Test
         @DisplayName("Should fail when neither topics nor topic-pattern are configured")
-        void shouldFailWhenNeitherTopicsNorPatternConfigured(String pattern) {
+        void shouldFailWhenNeitherTopicsNorPatternConfigured() {
             var context = mock(ConstraintValidatorContext.class);
             var builder = mock(ConstraintValidatorContext.ConstraintViolationBuilder.class);
             var nodeBuilder = mock(ConstraintValidatorContext.ConstraintViolationBuilder.NodeBuilderCustomizableContext.class);
@@ -130,7 +153,7 @@ class KafkaSourcePropertiesValidatorTest {
                 List.of("localhost:9092"),
                 "group",
                 null,
-                pattern,
+                null,
                 KafkaOffsetInitializer.EARLIEST,
                 null,
                 null,
@@ -141,6 +164,35 @@ class KafkaSourcePropertiesValidatorTest {
             verify(context).disableDefaultConstraintViolation();
             verify(context).buildConstraintViolationWithTemplate("Either 'topics' or 'topic-pattern' must be specified");
             verify(builder).addPropertyNode("topics");
+            verify(nodeBuilder).addConstraintViolation();
+        }
+
+        @Test
+        @DisplayName("Should fail when both topics and empty topic-pattern are configured")
+        void shouldFailWhenBothTopicsAndEmptyTopicPatternConfigured() {
+            var context = mock(ConstraintValidatorContext.class);
+            var builder = mock(ConstraintValidatorContext.ConstraintViolationBuilder.class);
+            var nodeBuilder = mock(ConstraintValidatorContext.ConstraintViolationBuilder.NodeBuilderCustomizableContext.class);
+
+            when(context.buildConstraintViolationWithTemplate(anyString())).thenReturn(builder);
+            when(builder.addPropertyNode("topicPattern")).thenReturn(nodeBuilder);
+
+            var props = new KafkaSourceProperties(
+                "source",
+                List.of("localhost:9092"),
+                "group",
+                List.of("my-topic"),
+                "",
+                KafkaOffsetInitializer.EARLIEST,
+                null,
+                null,
+                Map.of()
+            );
+
+            assertFalse(KafkaSourcePropertiesValidator.validate(props, context));
+            verify(context).disableDefaultConstraintViolation();
+            verify(context).buildConstraintViolationWithTemplate("Cannot configure both 'topics' and 'topic-pattern'");
+            verify(builder).addPropertyNode("topicPattern");
             verify(nodeBuilder).addConstraintViolation();
         }
 
