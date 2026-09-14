@@ -1,4 +1,4 @@
-package io.github.sekelenao.flinkboot.core.api.exception.configuration;
+package io.github.sekelenao.flinkboot.core.api.exception.parsing;
 
 import io.github.sekelenao.flinkboot.core.api.exception.FlinkbootException;
 

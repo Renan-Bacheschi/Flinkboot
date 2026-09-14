@@ -10,6 +10,7 @@ module io.github.sekelenao.flinkboot.core {
     exports io.github.sekelenao.flinkboot.core.api.properties.state;
     exports io.github.sekelenao.flinkboot.core.api.exception;
     exports io.github.sekelenao.flinkboot.core.api.exception.configuration;
+    exports io.github.sekelenao.flinkboot.core.api.exception.execution;
     exports io.github.sekelenao.flinkboot.core.api.exception.parsing;
     exports io.github.sekelenao.flinkboot.core.api.exception.resource;
     exports io.github.sekelenao.flinkboot.core.api.resource;
