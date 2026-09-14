@@ -260,5 +260,5 @@ public class MyFlinkJob {
 
 ## 5. Fail-Fast Validation & Exceptions
 
-All configuration models enforce fail-fast validation at startup via Jakarta Bean Validation (`@ValidConfiguration` / `ValidatableProperties`) and throw `ConstraintViolationException` upon invalid cross-field configuration (such as mismatched restart strategy sub-blocks, or missing/extraneous `custom-class` for state backend):
+All configuration models enforce fail-fast validation at startup via Jakarta Bean Validation (`@ValidConfiguration` / `ValidatableProperties`) and throw `ConfigurationValidationException` upon invalid cross-field configuration (such as mismatched restart strategy sub-blocks, or missing/extraneous `custom-class` for state backend):
 - **`UnsupportedExecutionEnvironmentException`**: Thrown if `local-web-ui.enabled=true` is used in a Flink cluster environment.

@@ -15,6 +15,7 @@ public final class PropertiesValidator implements ConstraintValidator<ValidConfi
 
     @Override
     public boolean isValid(ValidatableProperties value, ConstraintValidatorContext context) {
+        Objects.requireNonNull(context, "context must not be null");
         if (value == null) {
             return true;
         }

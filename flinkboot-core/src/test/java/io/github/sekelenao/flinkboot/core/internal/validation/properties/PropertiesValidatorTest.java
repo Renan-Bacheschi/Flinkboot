@@ -21,10 +21,17 @@ class PropertiesValidatorTest {
     class IsValidTests {
 
         @Test
-        @DisplayName("Should return true when value is null")
+        @DisplayName("Should return true when value is null and context is present")
         void shouldReturnTrueWhenValueIsNull() {
             var validator = new PropertiesValidator();
-            assertTrue(validator.isValid(null, null));
+            assertTrue(validator.isValid(null, mock(ConstraintValidatorContext.class)));
+        }
+
+        @Test
+        @DisplayName("Should throw NullPointerException when context is null")
+        void shouldThrowWhenContextIsNull() {
+            var validator = new PropertiesValidator();
+            assertThrows(NullPointerException.class, () -> validator.isValid(null, null));
         }
 
         @Test
