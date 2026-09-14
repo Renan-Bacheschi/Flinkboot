@@ -2,7 +2,7 @@ package io.github.sekelenao.flinkboot.core.api.properties.restart;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
-import io.github.sekelenao.flinkboot.core.api.exception.configuration.InvalidRestartStrategyPropertiesException;
+
 import jakarta.validation.Validation;
 import jakarta.validation.Validator;
 import org.junit.jupiter.api.BeforeAll;
@@ -161,118 +161,116 @@ class RestartStrategyPropertiesTest {
         }
 
         @Test
-        @DisplayName("Should throw Exception when sub-config provided for NO_RESTART")
-        void shouldThrowExceptionWhenSubConfigProvidedForNoRestart() {
+        @DisplayName("Should fail validation when sub-config provided for NO_RESTART")
+        void shouldFailValidationWhenSubConfigProvidedForNoRestart() {
             var fixed = new FixedDelayRestartProperties(3, Duration.ofSeconds(5));
-            assertThrows(
-                InvalidRestartStrategyPropertiesException.class,
-                () -> new RestartStrategyProperties(RestartStrategyType.NO_RESTART, fixed, null, null)
-            );
-        }
-
-        @Test
-        @DisplayName("Should throw Exception when sub-config provided for FALLBACK or null type")
-        void shouldThrowExceptionWhenSubConfigProvidedForFallback() {
-            var fixed = new FixedDelayRestartProperties(3, Duration.ofSeconds(5));
+            var config = new RestartStrategyProperties(RestartStrategyType.NO_RESTART, fixed, null, null);
+            var violations = validator.validate(config);
             assertAll(
-                () -> assertThrows(InvalidRestartStrategyPropertiesException.class, () -> new RestartStrategyProperties(RestartStrategyType.FALLBACK, fixed, null, null)),
-                () -> assertThrows(InvalidRestartStrategyPropertiesException.class, () -> new RestartStrategyProperties(null, fixed, null, null))
+                () -> assertEquals(1, violations.size()),
+                () -> assertTrue(violations.stream().anyMatch(v -> v.getPropertyPath().toString().equals("type")))
             );
         }
 
         @Test
-        @DisplayName("Should throw Exception when failure-rate provided for NO_RESTART or FALLBACK")
-        void shouldThrowExceptionWhenFailureRateProvidedForNoRestartOrFallback() {
-            var failure = new FailureRateRestartProperties(3, Duration.ofMinutes(1), Duration.ofSeconds(1));
+        @DisplayName("Should fail validation when sub-config provided for FALLBACK or null type")
+        void shouldFailValidationWhenSubConfigProvidedForFallback() {
+            var fixed = new FixedDelayRestartProperties(3, Duration.ofSeconds(5));
+            var config1 = new RestartStrategyProperties(RestartStrategyType.FALLBACK, fixed, null, null);
+            var config2 = new RestartStrategyProperties(null, fixed, null, null);
             assertAll(
-                () -> assertThrows(InvalidRestartStrategyPropertiesException.class, () -> new RestartStrategyProperties(RestartStrategyType.NO_RESTART, null, failure, null)),
-                () -> assertThrows(InvalidRestartStrategyPropertiesException.class, () -> new RestartStrategyProperties(RestartStrategyType.FALLBACK, null, failure, null))
+                () -> assertEquals(1, validator.validate(config1).size()),
+                () -> assertEquals(1, validator.validate(config2).size())
             );
         }
 
         @Test
-        @DisplayName("Should throw Exception when exponential-delay provided for NO_RESTART or FALLBACK")
-        void shouldThrowExceptionWhenExponentialDelayProvidedForNoRestartOrFallback() {
-            var expo = new ExponentialDelayRestartProperties(Duration.ofSeconds(1), Duration.ofMinutes(1), 2.0, Duration.ofHours(1), 0.1);
+        @DisplayName("Should fail validation when failure-rate provided for NO_RESTART or FALLBACK")
+        void shouldFailValidationWhenFailureRateProvidedForNoRestartOrFallback() {
+            var failure = new FailureRateRestartProperties(3, Duration.ofMinutes(1), Duration.ofSeconds(1));
+            var config1 = new RestartStrategyProperties(RestartStrategyType.NO_RESTART, null, failure, null);
+            var config2 = new RestartStrategyProperties(RestartStrategyType.FALLBACK, null, failure, null);
             assertAll(
-                () -> assertThrows(InvalidRestartStrategyPropertiesException.class, () -> new RestartStrategyProperties(RestartStrategyType.NO_RESTART, null, null, expo)),
-                () -> assertThrows(InvalidRestartStrategyPropertiesException.class, () -> new RestartStrategyProperties(RestartStrategyType.FALLBACK, null, null, expo))
+                () -> assertEquals(1, validator.validate(config1).size()),
+                () -> assertEquals(1, validator.validate(config2).size())
             );
         }
 
         @Test
-        @DisplayName("Should throw Exception when incompatible failure-rate provided for FIXED_DELAY")
-        void shouldThrowExceptionWhenIncompatibleSubConfigForFixedDelay() {
+        @DisplayName("Should fail validation when exponential-delay provided for NO_RESTART or FALLBACK")
+        void shouldFailValidationWhenExponentialDelayProvidedForNoRestartOrFallback() {
+            var expo = new ExponentialDelayRestartProperties(Duration.ofSeconds(1), Duration.ofMinutes(1), 2.0, Duration.ofHours(1), 0.1);
+            var config1 = new RestartStrategyProperties(RestartStrategyType.NO_RESTART, null, null, expo);
+            var config2 = new RestartStrategyProperties(RestartStrategyType.FALLBACK, null, null, expo);
+            assertAll(
+                () -> assertEquals(1, validator.validate(config1).size()),
+                () -> assertEquals(1, validator.validate(config2).size())
+            );
+        }
+
+        @Test
+        @DisplayName("Should fail validation when incompatible failure-rate provided for FIXED_DELAY")
+        void shouldFailValidationWhenIncompatibleSubConfigForFixedDelay() {
             var fixed = new FixedDelayRestartProperties(3, Duration.ofSeconds(5));
             var failure = new FailureRateRestartProperties(3, Duration.ofMinutes(1), Duration.ofSeconds(1));
-            assertThrows(
-                InvalidRestartStrategyPropertiesException.class,
-                () -> new RestartStrategyProperties(RestartStrategyType.FIXED_DELAY, fixed, failure, null)
-            );
+            var config = new RestartStrategyProperties(RestartStrategyType.FIXED_DELAY, fixed, failure, null);
+            assertEquals(1, validator.validate(config).size());
         }
 
         @Test
-        @DisplayName("Should throw Exception when incompatible exponential-delay provided for FIXED_DELAY")
-        void shouldThrowExceptionWhenExponentialDelayProvidedForFixedDelay() {
+        @DisplayName("Should fail validation when incompatible exponential-delay provided for FIXED_DELAY")
+        void shouldFailValidationWhenExponentialDelayProvidedForFixedDelay() {
             var fixed = new FixedDelayRestartProperties(3, Duration.ofSeconds(5));
             var expo = new ExponentialDelayRestartProperties(Duration.ofSeconds(1), Duration.ofMinutes(1), 2.0, Duration.ofHours(1), 0.1);
-            assertThrows(
-                InvalidRestartStrategyPropertiesException.class,
-                () -> new RestartStrategyProperties(RestartStrategyType.FIXED_DELAY, fixed, null, expo)
-            );
+            var config = new RestartStrategyProperties(RestartStrategyType.FIXED_DELAY, fixed, null, expo);
+            assertEquals(1, validator.validate(config).size());
         }
 
         @Test
-        @DisplayName("Should throw Exception when incompatible fixed-delay provided for FAILURE_RATE")
-        void shouldThrowExceptionWhenIncompatibleSubConfigForFailureRate() {
+        @DisplayName("Should fail validation when incompatible fixed-delay provided for FAILURE_RATE")
+        void shouldFailValidationWhenIncompatibleSubConfigForFailureRate() {
             var fixed = new FixedDelayRestartProperties(3, Duration.ofSeconds(5));
             var failure = new FailureRateRestartProperties(3, Duration.ofMinutes(1), Duration.ofSeconds(1));
-            assertThrows(
-                InvalidRestartStrategyPropertiesException.class,
-                () -> new RestartStrategyProperties(RestartStrategyType.FAILURE_RATE, fixed, failure, null)
-            );
+            var config = new RestartStrategyProperties(RestartStrategyType.FAILURE_RATE, fixed, failure, null);
+            assertEquals(1, validator.validate(config).size());
         }
 
         @Test
-        @DisplayName("Should throw Exception when incompatible exponential-delay provided for FAILURE_RATE")
-        void shouldThrowExceptionWhenExponentialDelayProvidedForFailureRate() {
+        @DisplayName("Should fail validation when incompatible exponential-delay provided for FAILURE_RATE")
+        void shouldFailValidationWhenExponentialDelayProvidedForFailureRate() {
             var failure = new FailureRateRestartProperties(3, Duration.ofMinutes(1), Duration.ofSeconds(1));
             var expo = new ExponentialDelayRestartProperties(Duration.ofSeconds(1), Duration.ofMinutes(1), 2.0, Duration.ofHours(1), 0.1);
-            assertThrows(
-                InvalidRestartStrategyPropertiesException.class,
-                () -> new RestartStrategyProperties(RestartStrategyType.FAILURE_RATE, null, failure, expo)
-            );
+            var config = new RestartStrategyProperties(RestartStrategyType.FAILURE_RATE, null, failure, expo);
+            assertEquals(1, validator.validate(config).size());
         }
 
         @Test
-        @DisplayName("Should throw Exception when incompatible fixed-delay provided for EXPONENTIAL_DELAY")
-        void shouldThrowExceptionWhenIncompatibleSubConfigForExponentialDelay() {
+        @DisplayName("Should fail validation when incompatible fixed-delay provided for EXPONENTIAL_DELAY")
+        void shouldFailValidationWhenIncompatibleSubConfigForExponentialDelay() {
             var fixed = new FixedDelayRestartProperties(3, Duration.ofSeconds(5));
             var expo = new ExponentialDelayRestartProperties(Duration.ofSeconds(1), Duration.ofMinutes(1), 2.0, Duration.ofHours(1), 0.1);
-            assertThrows(
-                InvalidRestartStrategyPropertiesException.class,
-                () -> new RestartStrategyProperties(RestartStrategyType.EXPONENTIAL_DELAY, fixed, null, expo)
-            );
+            var config = new RestartStrategyProperties(RestartStrategyType.EXPONENTIAL_DELAY, fixed, null, expo);
+            assertEquals(1, validator.validate(config).size());
         }
 
         @Test
-        @DisplayName("Should throw Exception when incompatible failure-rate provided for EXPONENTIAL_DELAY")
-        void shouldThrowExceptionWhenFailureRateProvidedForExponentialDelay() {
+        @DisplayName("Should fail validation when incompatible failure-rate provided for EXPONENTIAL_DELAY")
+        void shouldFailValidationWhenFailureRateProvidedForExponentialDelay() {
             var failure = new FailureRateRestartProperties(3, Duration.ofMinutes(1), Duration.ofSeconds(1));
             var expo = new ExponentialDelayRestartProperties(Duration.ofSeconds(1), Duration.ofMinutes(1), 2.0, Duration.ofHours(1), 0.1);
-            assertThrows(
-                InvalidRestartStrategyPropertiesException.class,
-                () -> new RestartStrategyProperties(RestartStrategyType.EXPONENTIAL_DELAY, null, failure, expo)
-            );
+            var config = new RestartStrategyProperties(RestartStrategyType.EXPONENTIAL_DELAY, null, failure, expo);
+            assertEquals(1, validator.validate(config).size());
         }
 
         @Test
-        @DisplayName("Should throw Exception when maxBackoff < initialBackoff in exponential delay")
-        void shouldThrowExceptionWhenMaxBackoffIsSmallerThanInitial() {
+        @DisplayName("Should fail validation when maxBackoff < initialBackoff in exponential delay")
+        void shouldFailValidationWhenMaxBackoffIsSmallerThanInitial() {
             var expo = new ExponentialDelayRestartProperties(Duration.ofSeconds(10), Duration.ofSeconds(1), 2.0, Duration.ofHours(1), 0.1);
-            assertThrows(
-                InvalidRestartStrategyPropertiesException.class,
-                () -> new RestartStrategyProperties(RestartStrategyType.EXPONENTIAL_DELAY, null, null, expo)
+            var config = new RestartStrategyProperties(RestartStrategyType.EXPONENTIAL_DELAY, null, null, expo);
+            var violations = validator.validate(config);
+            assertAll(
+                () -> assertEquals(1, violations.size()),
+                () -> assertTrue(violations.stream().anyMatch(v -> v.getPropertyPath().toString().equals("exponentialDelay")))
             );
         }
 

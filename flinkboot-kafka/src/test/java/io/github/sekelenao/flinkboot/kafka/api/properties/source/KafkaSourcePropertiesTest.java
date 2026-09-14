@@ -2,7 +2,6 @@ package io.github.sekelenao.flinkboot.kafka.api.properties.source;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
-import io.github.sekelenao.flinkboot.kafka.api.exception.InvalidKafkaSourcePropertiesException;
 import jakarta.validation.Validation;
 import jakarta.validation.Validator;
 import org.junit.jupiter.api.BeforeEach;
@@ -121,9 +120,9 @@ class KafkaSourcePropertiesTest {
     class ValidationTests {
 
         @Test
-        @DisplayName("Should throw InvalidKafkaSourcePropertiesException when both topics and topic-pattern are configured")
-        void shouldThrowWhenBothTopicsAndTopicPatternSpecified() {
-            var exception = assertThrows(InvalidKafkaSourcePropertiesException.class, () -> new KafkaSourceProperties(
+        @DisplayName("Should fail validation when both topics and topic-pattern are configured")
+        void shouldFailWhenBothTopicsAndTopicPatternSpecified() {
+            var props = new KafkaSourceProperties(
                 "my-source",
                 List.of("localhost:9092"),
                 "my-group",
@@ -133,15 +132,21 @@ class KafkaSourcePropertiesTest {
                 null,
                 null,
                 null
-            ));
-
-            assertEquals("Cannot configure both 'topics' and 'topic-pattern'", exception.getMessage());
+            );
+            var violations = validator.validate(props);
+            assertAll(
+                () -> assertEquals(1, violations.size()),
+                () -> assertTrue(violations.stream().anyMatch(v ->
+                    v.getPropertyPath().toString().equals("topicPattern")
+                        && v.getMessage().equals("Cannot configure both 'topics' and 'topic-pattern'")
+                ))
+            );
         }
 
         @Test
-        @DisplayName("Should throw InvalidKafkaSourcePropertiesException when neither topics nor topic-pattern are configured")
-        void shouldThrowWhenNeitherTopicsNorTopicPatternSpecified() {
-            var exception = assertThrows(InvalidKafkaSourcePropertiesException.class, () -> new KafkaSourceProperties(
+        @DisplayName("Should fail validation when neither topics nor topic-pattern are configured")
+        void shouldFailWhenNeitherTopicsNorTopicPatternSpecified() {
+            var props = new KafkaSourceProperties(
                 "my-source",
                 List.of("localhost:9092"),
                 "my-group",
@@ -151,15 +156,21 @@ class KafkaSourcePropertiesTest {
                 null,
                 null,
                 null
-            ));
-
-            assertEquals("Either 'topics' or 'topic-pattern' must be specified", exception.getMessage());
+            );
+            var violations = validator.validate(props);
+            assertAll(
+                () -> assertEquals(1, violations.size()),
+                () -> assertTrue(violations.stream().anyMatch(v ->
+                    v.getPropertyPath().toString().equals("topics")
+                        && v.getMessage().equals("Either 'topics' or 'topic-pattern' must be specified")
+                ))
+            );
         }
 
         @Test
-        @DisplayName("Should throw InvalidKafkaSourcePropertiesException when topics is empty and topic-pattern is null")
-        void shouldThrowWhenTopicsIsEmptyAndPatternIsNull() {
-            var exception = assertThrows(InvalidKafkaSourcePropertiesException.class, () -> new KafkaSourceProperties(
+        @DisplayName("Should fail validation when topics is empty and topic-pattern is null")
+        void shouldFailWhenTopicsIsEmptyAndPatternIsNull() {
+            var props = new KafkaSourceProperties(
                 "my-source",
                 List.of("localhost:9092"),
                 "my-group",
@@ -169,15 +180,21 @@ class KafkaSourcePropertiesTest {
                 null,
                 null,
                 null
-            ));
-
-            assertEquals("Either 'topics' or 'topic-pattern' must be specified", exception.getMessage());
+            );
+            var violations = validator.validate(props);
+            assertAll(
+                () -> assertEquals(1, violations.size()),
+                () -> assertTrue(violations.stream().anyMatch(v ->
+                    v.getPropertyPath().toString().equals("topics")
+                        && v.getMessage().equals("Either 'topics' or 'topic-pattern' must be specified")
+                ))
+            );
         }
 
         @Test
-        @DisplayName("Should throw InvalidKafkaSourcePropertiesException when topics is null and topic-pattern is blank")
-        void shouldThrowWhenTopicsIsNullAndPatternIsBlank() {
-            var exception = assertThrows(InvalidKafkaSourcePropertiesException.class, () -> new KafkaSourceProperties(
+        @DisplayName("Should fail validation when topics is null and topic-pattern is blank")
+        void shouldFailWhenTopicsIsNullAndPatternIsBlank() {
+            var props = new KafkaSourceProperties(
                 "my-source",
                 List.of("localhost:9092"),
                 "my-group",
@@ -187,15 +204,21 @@ class KafkaSourcePropertiesTest {
                 null,
                 null,
                 null
-            ));
-
-            assertEquals("Either 'topics' or 'topic-pattern' must be specified", exception.getMessage());
+            );
+            var violations = validator.validate(props);
+            assertAll(
+                () -> assertEquals(1, violations.size()),
+                () -> assertTrue(violations.stream().anyMatch(v ->
+                    v.getPropertyPath().toString().equals("topics")
+                        && v.getMessage().equals("Either 'topics' or 'topic-pattern' must be specified")
+                ))
+            );
         }
 
         @Test
-        @DisplayName("Should throw InvalidKafkaSourcePropertiesException when TIMESTAMP is used without timestamp")
-        void shouldThrowWhenTimestampIsMissingForTimestampStrategy() {
-            var exception = assertThrows(InvalidKafkaSourcePropertiesException.class, () -> new KafkaSourceProperties(
+        @DisplayName("Should fail validation when TIMESTAMP is used without timestamp")
+        void shouldFailWhenTimestampIsMissingForTimestampStrategy() {
+            var props = new KafkaSourceProperties(
                 "my-source",
                 List.of("localhost:9092"),
                 "my-group",
@@ -205,15 +228,21 @@ class KafkaSourcePropertiesTest {
                 null,
                 null,
                 null
-            ));
-
-            assertEquals("starting-offsets-timestamp is required when starting-offsets is TIMESTAMP", exception.getMessage());
+            );
+            var violations = validator.validate(props);
+            assertAll(
+                () -> assertEquals(1, violations.size()),
+                () -> assertTrue(violations.stream().anyMatch(v ->
+                    v.getPropertyPath().toString().equals("startingOffsetsTimestamp")
+                        && v.getMessage().equals("starting-offsets-timestamp is required when starting-offsets is TIMESTAMP")
+                ))
+            );
         }
 
         @Test
-        @DisplayName("Should throw InvalidKafkaSourcePropertiesException when TIMESTAMP is used with partition offsets")
-        void shouldThrowWhenPartitionOffsetsSpecifiedForTimestampStrategy() {
-            var exception = assertThrows(InvalidKafkaSourcePropertiesException.class, () -> new KafkaSourceProperties(
+        @DisplayName("Should fail validation when TIMESTAMP is used with partition offsets")
+        void shouldFailWhenPartitionOffsetsSpecifiedForTimestampStrategy() {
+            var props = new KafkaSourceProperties(
                 "my-source",
                 List.of("localhost:9092"),
                 "my-group",
@@ -223,15 +252,21 @@ class KafkaSourcePropertiesTest {
                 1000L,
                 List.of(new TopicPartitionOffsetProperties("topic-a", 0, 100L)),
                 null
-            ));
-
-            assertEquals("starting-offsets-partition-offsets must not be specified when starting-offsets is TIMESTAMP", exception.getMessage());
+            );
+            var violations = validator.validate(props);
+            assertAll(
+                () -> assertEquals(1, violations.size()),
+                () -> assertTrue(violations.stream().anyMatch(v ->
+                    v.getPropertyPath().toString().equals("startingOffsetsPartitionOffsets")
+                        && v.getMessage().equals("starting-offsets-partition-offsets must not be specified when starting-offsets is TIMESTAMP")
+                ))
+            );
         }
 
         @Test
-        @DisplayName("Should throw InvalidKafkaSourcePropertiesException when OFFSETS is used without partition offsets")
-        void shouldThrowWhenPartitionOffsetsMissingForOffsetsStrategy() {
-            var exception = assertThrows(InvalidKafkaSourcePropertiesException.class, () -> new KafkaSourceProperties(
+        @DisplayName("Should fail validation when OFFSETS is used without partition offsets")
+        void shouldFailWhenPartitionOffsetsMissingForOffsetsStrategy() {
+            var props = new KafkaSourceProperties(
                 "my-source",
                 List.of("localhost:9092"),
                 "my-group",
@@ -241,15 +276,21 @@ class KafkaSourcePropertiesTest {
                 null,
                 null,
                 null
-            ));
-
-            assertEquals("starting-offsets-partition-offsets is required and cannot be empty when starting-offsets is OFFSETS", exception.getMessage());
+            );
+            var violations = validator.validate(props);
+            assertAll(
+                () -> assertEquals(1, violations.size()),
+                () -> assertTrue(violations.stream().anyMatch(v ->
+                    v.getPropertyPath().toString().equals("startingOffsetsPartitionOffsets")
+                        && v.getMessage().equals("starting-offsets-partition-offsets is required and cannot be empty when starting-offsets is OFFSETS")
+                ))
+            );
         }
 
         @Test
-        @DisplayName("Should throw InvalidKafkaSourcePropertiesException when OFFSETS is used with timestamp")
-        void shouldThrowWhenTimestampSpecifiedForOffsetsStrategy() {
-            var exception = assertThrows(InvalidKafkaSourcePropertiesException.class, () -> new KafkaSourceProperties(
+        @DisplayName("Should fail validation when OFFSETS is used with timestamp")
+        void shouldFailWhenTimestampSpecifiedForOffsetsStrategy() {
+            var props = new KafkaSourceProperties(
                 "my-source",
                 List.of("localhost:9092"),
                 "my-group",
@@ -259,15 +300,21 @@ class KafkaSourcePropertiesTest {
                 1000L,
                 List.of(new TopicPartitionOffsetProperties("topic-a", 0, 100L)),
                 null
-            ));
-
-            assertEquals("starting-offsets-timestamp must not be specified when starting-offsets is OFFSETS", exception.getMessage());
+            );
+            var violations = validator.validate(props);
+            assertAll(
+                () -> assertEquals(1, violations.size()),
+                () -> assertTrue(violations.stream().anyMatch(v ->
+                    v.getPropertyPath().toString().equals("startingOffsetsTimestamp")
+                        && v.getMessage().equals("starting-offsets-timestamp must not be specified when starting-offsets is OFFSETS")
+                ))
+            );
         }
 
         @Test
-        @DisplayName("Should throw InvalidKafkaSourcePropertiesException when OFFSETS is used with empty partition offsets list")
-        void shouldThrowWhenPartitionOffsetsIsEmptyListForOffsetsStrategy() {
-            var exception = assertThrows(InvalidKafkaSourcePropertiesException.class, () -> new KafkaSourceProperties(
+        @DisplayName("Should fail validation when OFFSETS is used with empty partition offsets list")
+        void shouldFailWhenPartitionOffsetsIsEmptyListForOffsetsStrategy() {
+            var props = new KafkaSourceProperties(
                 "my-source",
                 List.of("localhost:9092"),
                 "my-group",
@@ -277,15 +324,21 @@ class KafkaSourcePropertiesTest {
                 null,
                 List.of(),
                 null
-            ));
-
-            assertEquals("starting-offsets-partition-offsets is required and cannot be empty when starting-offsets is OFFSETS", exception.getMessage());
+            );
+            var violations = validator.validate(props);
+            assertAll(
+                () -> assertEquals(1, violations.size()),
+                () -> assertTrue(violations.stream().anyMatch(v ->
+                    v.getPropertyPath().toString().equals("startingOffsetsPartitionOffsets")
+                        && v.getMessage().equals("starting-offsets-partition-offsets is required and cannot be empty when starting-offsets is OFFSETS")
+                ))
+            );
         }
 
         @Test
         @DisplayName("Should allow empty partition offsets list when TIMESTAMP strategy is used")
         void shouldAllowEmptyPartitionOffsetsWhenTimestampStrategy() {
-            assertDoesNotThrow(() -> new KafkaSourceProperties(
+            var props = new KafkaSourceProperties(
                 "my-source",
                 List.of("localhost:9092"),
                 "my-group",
@@ -295,13 +348,14 @@ class KafkaSourcePropertiesTest {
                 1000L,
                 List.of(),
                 null
-            ));
+            );
+            assertTrue(validator.validate(props).isEmpty());
         }
 
         @Test
         @DisplayName("Should allow empty partition offsets list when EARLIEST strategy is used")
         void shouldAllowEmptyPartitionOffsetsWhenEarliestStrategy() {
-            assertDoesNotThrow(() -> new KafkaSourceProperties(
+            var props = new KafkaSourceProperties(
                 "my-source",
                 List.of("localhost:9092"),
                 "my-group",
@@ -311,27 +365,37 @@ class KafkaSourcePropertiesTest {
                 null,
                 List.of(),
                 null
-            ));
+            );
+            assertTrue(validator.validate(props).isEmpty());
         }
 
         @Test
-        @DisplayName("Should throw InvalidKafkaSourcePropertiesException when non-TIMESTAMP/OFFSETS strategy has extra parameters")
-        void shouldThrowWhenExtraParametersProvidedForSimpleStrategy() {
+        @DisplayName("Should fail validation when non-TIMESTAMP/OFFSETS strategy has extra parameters")
+        void shouldFailWhenExtraParametersProvidedForSimpleStrategy() {
+            var propsTimestamp = new KafkaSourceProperties(
+                "my-source", List.of("localhost:9092"), "my-group", List.of("topic-a"), null,
+                KafkaOffsetInitializer.EARLIEST, 1000L, null, null
+            );
+            var violationsTimestamp = validator.validate(propsTimestamp);
             assertAll(
-                () -> {
-                    var ex = assertThrows(InvalidKafkaSourcePropertiesException.class, () -> new KafkaSourceProperties(
-                        "my-source", List.of("localhost:9092"), "my-group", List.of("topic-a"), null,
-                        KafkaOffsetInitializer.EARLIEST, 1000L, null, null
-                    ));
-                    assertEquals("starting-offsets-timestamp must not be specified when starting-offsets is EARLIEST", ex.getMessage());
-                },
-                () -> {
-                    var ex = assertThrows(InvalidKafkaSourcePropertiesException.class, () -> new KafkaSourceProperties(
-                        "my-source", List.of("localhost:9092"), "my-group", List.of("topic-a"), null,
-                        KafkaOffsetInitializer.LATEST, null, List.of(new TopicPartitionOffsetProperties("topic-a", 0, 100L)), null
-                    ));
-                    assertEquals("starting-offsets-partition-offsets must not be specified when starting-offsets is LATEST", ex.getMessage());
-                }
+                () -> assertEquals(1, violationsTimestamp.size()),
+                () -> assertTrue(violationsTimestamp.stream().anyMatch(v ->
+                    v.getPropertyPath().toString().equals("startingOffsetsTimestamp")
+                        && v.getMessage().equals("starting-offsets-timestamp must not be specified when starting-offsets is EARLIEST")
+                ))
+            );
+
+            var propsOffsets = new KafkaSourceProperties(
+                "my-source", List.of("localhost:9092"), "my-group", List.of("topic-a"), null,
+                KafkaOffsetInitializer.LATEST, null, List.of(new TopicPartitionOffsetProperties("topic-a", 0, 100L)), null
+            );
+            var violationsOffsets = validator.validate(propsOffsets);
+            assertAll(
+                () -> assertEquals(1, violationsOffsets.size()),
+                () -> assertTrue(violationsOffsets.stream().anyMatch(v ->
+                    v.getPropertyPath().toString().equals("startingOffsetsPartitionOffsets")
+                        && v.getMessage().equals("starting-offsets-partition-offsets must not be specified when starting-offsets is LATEST")
+                ))
             );
         }
 

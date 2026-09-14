@@ -2,7 +2,6 @@ package io.github.sekelenao.flinkboot.fluss.api.properties.source;
 
 import com.fasterxml.jackson.databind.MapperFeature;
 import com.fasterxml.jackson.dataformat.yaml.YAMLMapper;
-import io.github.sekelenao.flinkboot.fluss.api.exception.InvalidFlussSourcePropertiesException;
 import jakarta.validation.Validation;
 import jakarta.validation.Validator;
 import org.junit.jupiter.api.DisplayName;
@@ -180,37 +179,49 @@ class FlussSourcePropertiesTest {
         }
 
         @Test
-        @DisplayName("Should throw InvalidFlussSourcePropertiesException when TIMESTAMP mode is used without timestamp")
-        void shouldThrowWhenTimestampModeWithoutTimestamp() {
-            var exception = assertThrows(InvalidFlussSourcePropertiesException.class, () ->
-                new FlussSourceProperties(
-                    "my-source",
-                    List.of("localhost:9123"),
-                    "my_db",
-                    "my_table",
-                    FlussStartupMode.TIMESTAMP,
-                    null,
-                    Map.of()
-                )
+        @DisplayName("Should fail validation when TIMESTAMP mode is used without timestamp")
+        void shouldFailValidationWhenTimestampModeWithoutTimestamp() {
+            var props = new FlussSourceProperties(
+                "my-source",
+                List.of("localhost:9123"),
+                "my_db",
+                "my_table",
+                FlussStartupMode.TIMESTAMP,
+                null,
+                Map.of()
             );
-            assertEquals("startup-timestamp is required when startup-mode is TIMESTAMP", exception.getMessage());
+
+            var violations = validator.validate(props);
+            assertAll(
+                () -> assertEquals(1, violations.size()),
+                () -> assertTrue(violations.stream().anyMatch(v ->
+                    v.getPropertyPath().toString().equals("startupTimestamp")
+                        && v.getMessage().equals("startup-timestamp is required when startup-mode is TIMESTAMP")
+                ))
+            );
         }
 
         @Test
-        @DisplayName("Should throw InvalidFlussSourcePropertiesException when timestamp is specified with non-TIMESTAMP mode")
-        void shouldThrowWhenTimestampSpecifiedWithNonTimestampMode() {
-            var exception = assertThrows(InvalidFlussSourcePropertiesException.class, () ->
-                new FlussSourceProperties(
-                    "my-source",
-                    List.of("localhost:9123"),
-                    "my_db",
-                    "my_table",
-                    FlussStartupMode.EARLIEST,
-                    1700000000000L,
-                    Map.of()
-                )
+        @DisplayName("Should fail validation when timestamp is specified with non-TIMESTAMP mode")
+        void shouldFailValidationWhenTimestampSpecifiedWithNonTimestampMode() {
+            var props = new FlussSourceProperties(
+                "my-source",
+                List.of("localhost:9123"),
+                "my_db",
+                "my_table",
+                FlussStartupMode.EARLIEST,
+                1700000000000L,
+                Map.of()
             );
-            assertEquals("startup-timestamp must not be specified when startup-mode is EARLIEST", exception.getMessage());
+
+            var violations = validator.validate(props);
+            assertAll(
+                () -> assertEquals(1, violations.size()),
+                () -> assertTrue(violations.stream().anyMatch(v ->
+                    v.getPropertyPath().toString().equals("startupTimestamp")
+                        && v.getMessage().equals("startup-timestamp must not be specified when startup-mode is EARLIEST")
+                ))
+            );
         }
 
         @Test

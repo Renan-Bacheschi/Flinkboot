@@ -16,9 +16,11 @@ module io.github.sekelenao.flinkboot.core {
     exports io.github.sekelenao.flinkboot.core.api.resource;
     exports io.github.sekelenao.flinkboot.core.api.typing.time;
     exports io.github.sekelenao.flinkboot.core.api.typing.collection;
+    exports io.github.sekelenao.flinkboot.core.api.validation;
     // Internal utilities exported specifically to companion modules
     exports io.github.sekelenao.flinkboot.core.internal.annotation to io.github.sekelenao.flinkboot.kafka, io.github.sekelenao.flinkboot.fluss;
     exports io.github.sekelenao.flinkboot.core.internal.time to io.github.sekelenao.flinkboot.kafka, io.github.sekelenao.flinkboot.fluss;
+    exports io.github.sekelenao.flinkboot.core.internal.validation.properties to io.github.sekelenao.flinkboot.kafka, io.github.sekelenao.flinkboot.fluss;
 
 
     requires com.fasterxml.jackson.annotation;
@@ -41,8 +43,10 @@ module io.github.sekelenao.flinkboot.core {
     opens io.github.sekelenao.flinkboot.core.api.resource;
     opens io.github.sekelenao.flinkboot.core.api.typing.time;
     opens io.github.sekelenao.flinkboot.core.api.typing.collection;
+    opens io.github.sekelenao.flinkboot.core.api.validation;
     opens io.github.sekelenao.flinkboot.core.internal.parser.yaml to com.fasterxml.jackson.databind, org.hibernate.validator, org.junit.platform.commons;
     opens io.github.sekelenao.flinkboot.core.internal.validation to org.hibernate.validator, org.junit.platform.commons;
+    opens io.github.sekelenao.flinkboot.core.internal.validation.properties to org.hibernate.validator, org.junit.platform.commons;
     opens io.github.sekelenao.flinkboot.core.internal.execution to org.junit.platform.commons;
     opens io.github.sekelenao.flinkboot.core.internal.execution.customizer to org.junit.platform.commons;
     opens io.github.sekelenao.flinkboot.core.internal.execution.provider to org.junit.platform.commons;

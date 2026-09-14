@@ -2,8 +2,10 @@ package io.github.sekelenao.flinkboot.core.api.properties.state;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
-import io.github.sekelenao.flinkboot.core.api.exception.configuration.InvalidStateBackendPropertiesException;
+import io.github.sekelenao.flinkboot.core.api.validation.ValidatableProperties;
 import io.github.sekelenao.flinkboot.core.internal.annotation.Generated;
+import io.github.sekelenao.flinkboot.core.internal.validation.properties.StateBackendPropertiesValidator;
+import jakarta.validation.ConstraintValidatorContext;
 
 import java.io.Serializable;
 import java.util.Objects;
@@ -15,7 +17,7 @@ import java.util.Optional;
  * Supports {@link StateBackendType#HASHMAP}, {@link StateBackendType#ROCKSDB},
  * {@link StateBackendType#CHANGELOG}, or {@link StateBackendType#CUSTOM}.
  */
-public final class StateBackendProperties implements Serializable {
+public final class StateBackendProperties implements Serializable, ValidatableProperties {
 
     private static final long serialVersionUID = 1L;
 
@@ -33,7 +35,6 @@ public final class StateBackendProperties implements Serializable {
      * @param incremental       whether incremental checkpoints are enabled (RocksDB)
      * @param latencyTracking   whether state access latency tracking metrics are enabled (RocksDB)
      * @param customClass       fully qualified class name of custom state backend factory
-     * @throws InvalidStateBackendPropertiesException if customClass is invalid for the specified type
      */
     @JsonCreator
     public StateBackendProperties(
@@ -48,7 +49,6 @@ public final class StateBackendProperties implements Serializable {
         this.incremental = incremental;
         this.latencyTracking = latencyTracking;
         this.customClass = customClass;
-        validate();
     }
 
     /**
@@ -96,18 +96,9 @@ public final class StateBackendProperties implements Serializable {
         return Optional.ofNullable(customClass);
     }
 
-    private void validate() {
-        if (type == StateBackendType.CUSTOM) {
-            if (customClass == null || customClass.isBlank()) {
-                throw new InvalidStateBackendPropertiesException(
-                    "custom-class must be specified when state backend type is CUSTOM"
-                );
-            }
-        } else if (customClass != null && !customClass.isBlank()) {
-            throw new InvalidStateBackendPropertiesException(
-                "custom-class can only be specified when state backend type is CUSTOM"
-            );
-        }
+    @Override
+    public boolean validate(ConstraintValidatorContext context) {
+        return StateBackendPropertiesValidator.validate(this, context);
     }
 
     @Override
