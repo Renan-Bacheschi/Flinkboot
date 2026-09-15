@@ -18,7 +18,7 @@ class PropertiesValidatorTest {
 
     @Nested
     @DisplayName("isValid")
-    class IsValidTests {
+    class IsValid {
 
         @Test
         @DisplayName("Should return true when value is null and context is present")
@@ -50,7 +50,7 @@ class PropertiesValidatorTest {
 
     @Nested
     @DisplayName("reject")
-    class RejectTests {
+    class Reject {
 
         @Test
         @DisplayName("Should throw NullPointerException when context is null")

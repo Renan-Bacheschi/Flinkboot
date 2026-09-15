@@ -10,11 +10,10 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
-import java.lang.reflect.InvocationTargetException;
 import java.time.Duration;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.anyString;
@@ -31,28 +30,18 @@ class RestartStrategyPropertiesValidatorTest {
 
         @Test
         @DisplayName("Should throw NullPointerException when properties is null")
-        void shouldThrowWhenPropertiesIsNull() throws Exception {
-            var constructor = RestartStrategyPropertiesValidator.class.getDeclaredConstructor(
-                RestartStrategyProperties.class,
-                ConstraintValidatorContext.class
-            );
-            constructor.setAccessible(true);
+        void shouldThrowWhenPropertiesIsNull() {
             var context = mock(ConstraintValidatorContext.class);
-            var targetException = assertThrows(InvocationTargetException.class, () -> constructor.newInstance(null, context));
-            assertInstanceOf(NullPointerException.class, targetException.getCause());
+            var exception = assertThrows(NullPointerException.class, () -> RestartStrategyPropertiesValidator.validate(null, context));
+            assertEquals("properties must not be null", exception.getMessage());
         }
 
         @Test
         @DisplayName("Should throw NullPointerException when context is null")
-        void shouldThrowWhenContextIsNull() throws Exception {
-            var constructor = RestartStrategyPropertiesValidator.class.getDeclaredConstructor(
-                RestartStrategyProperties.class,
-                ConstraintValidatorContext.class
-            );
-            constructor.setAccessible(true);
+        void shouldThrowWhenContextIsNull() {
             var props = new RestartStrategyProperties(null, null, null, null);
-            var targetException = assertThrows(InvocationTargetException.class, () -> constructor.newInstance(props, null));
-            assertInstanceOf(NullPointerException.class, targetException.getCause());
+            var exception = assertThrows(NullPointerException.class, () -> RestartStrategyPropertiesValidator.validate(props, null));
+            assertEquals("context must not be null", exception.getMessage());
         }
     }
 
@@ -161,6 +150,104 @@ class RestartStrategyPropertiesValidatorTest {
             verify(context).disableDefaultConstraintViolation();
             verify(context).buildConstraintViolationWithTemplate(
                 "max-backoff cannot be smaller than initial-backoff in exponential-delay restart strategy"
+            );
+        }
+
+        @Test
+        @DisplayName("Should return true when strategy type is FALLBACK with no sub-configuration")
+        void shouldPassWhenFallbackWithNoSubConfig() {
+            var context = mock(ConstraintValidatorContext.class);
+            var props = new RestartStrategyProperties(RestartStrategyType.FALLBACK, null, null, null);
+
+            assertTrue(RestartStrategyPropertiesValidator.validate(props, context));
+        }
+
+        @Test
+        @DisplayName("Should return true for valid FAILURE_RATE strategy")
+        void shouldPassWithValidFailureRate() {
+            var context = mock(ConstraintValidatorContext.class);
+            var failure = new FailureRateRestartProperties(3, Duration.ofMinutes(1), Duration.ofSeconds(1));
+            var props = new RestartStrategyProperties(RestartStrategyType.FAILURE_RATE, null, failure, null);
+
+            assertTrue(RestartStrategyPropertiesValidator.validate(props, context));
+        }
+
+        @Test
+        @DisplayName("Should return true for valid EXPONENTIAL_DELAY strategy")
+        void shouldPassWithValidExponentialDelay() {
+            var context = mock(ConstraintValidatorContext.class);
+            var expo = new ExponentialDelayRestartProperties(Duration.ofSeconds(1), Duration.ofMinutes(1), 2.0, Duration.ofHours(1), 0.1);
+            var props = new RestartStrategyProperties(RestartStrategyType.EXPONENTIAL_DELAY, null, null, expo);
+
+            assertTrue(RestartStrategyPropertiesValidator.validate(props, context));
+        }
+
+        @Test
+        @DisplayName("Should return true when initial-backoff equals max-backoff in EXPONENTIAL_DELAY")
+        void shouldPassWhenInitialBackoffEqualsMaxBackoffInExponentialDelay() {
+            var context = mock(ConstraintValidatorContext.class);
+            var expo = new ExponentialDelayRestartProperties(Duration.ofSeconds(5), Duration.ofSeconds(5), 2.0, Duration.ofHours(1), 0.1);
+            var props = new RestartStrategyProperties(RestartStrategyType.EXPONENTIAL_DELAY, null, null, expo);
+
+            assertTrue(RestartStrategyPropertiesValidator.validate(props, context));
+        }
+
+        @Test
+        @DisplayName("Should return false when exponential-delay is provided for FIXED_DELAY")
+        void shouldFailWhenExponentialDelayProvidedForFixedDelay() {
+            var context = createMockContext();
+            var fixed = new FixedDelayRestartProperties(3, Duration.ofSeconds(5));
+            var expo = new ExponentialDelayRestartProperties(Duration.ofSeconds(1), Duration.ofMinutes(1), 2.0, Duration.ofHours(1), 0.1);
+            var props = new RestartStrategyProperties(RestartStrategyType.FIXED_DELAY, fixed, null, expo);
+
+            assertFalse(RestartStrategyPropertiesValidator.validate(props, context));
+            verify(context).disableDefaultConstraintViolation();
+            verify(context).buildConstraintViolationWithTemplate(
+                "Cannot specify failure-rate or exponential-delay when restart strategy type is FIXED_DELAY"
+            );
+        }
+
+        @Test
+        @DisplayName("Should return false when exponential-delay is provided for FAILURE_RATE")
+        void shouldFailWhenExponentialDelayProvidedForFailureRate() {
+            var context = createMockContext();
+            var failure = new FailureRateRestartProperties(3, Duration.ofMinutes(1), Duration.ofSeconds(1));
+            var expo = new ExponentialDelayRestartProperties(Duration.ofSeconds(1), Duration.ofMinutes(1), 2.0, Duration.ofHours(1), 0.1);
+            var props = new RestartStrategyProperties(RestartStrategyType.FAILURE_RATE, null, failure, expo);
+
+            assertFalse(RestartStrategyPropertiesValidator.validate(props, context));
+            verify(context).disableDefaultConstraintViolation();
+            verify(context).buildConstraintViolationWithTemplate(
+                "Cannot specify fixed-delay or exponential-delay when restart strategy type is FAILURE_RATE"
+            );
+        }
+
+        @Test
+        @DisplayName("Should return false when fixed-delay is provided for EXPONENTIAL_DELAY")
+        void shouldFailWhenFixedDelayProvidedForExponentialDelay() {
+            var context = createMockContext();
+            var fixed = new FixedDelayRestartProperties(3, Duration.ofSeconds(5));
+            var expo = new ExponentialDelayRestartProperties(Duration.ofSeconds(1), Duration.ofMinutes(1), 2.0, Duration.ofHours(1), 0.1);
+            var props = new RestartStrategyProperties(RestartStrategyType.EXPONENTIAL_DELAY, fixed, null, expo);
+
+            assertFalse(RestartStrategyPropertiesValidator.validate(props, context));
+            verify(context).disableDefaultConstraintViolation();
+            verify(context).buildConstraintViolationWithTemplate(
+                "Cannot specify fixed-delay or failure-rate when restart strategy type is EXPONENTIAL_DELAY"
+            );
+        }
+
+        @Test
+        @DisplayName("Should return false when sub-configuration provided for FALLBACK")
+        void shouldFailWhenSubConfigProvidedForFallback() {
+            var context = createMockContext();
+            var fixed = new FixedDelayRestartProperties(3, Duration.ofSeconds(5));
+            var props = new RestartStrategyProperties(RestartStrategyType.FALLBACK, fixed, null, null);
+
+            assertFalse(RestartStrategyPropertiesValidator.validate(props, context));
+            verify(context).disableDefaultConstraintViolation();
+            verify(context).buildConstraintViolationWithTemplate(
+                "No sub-configuration (fixed-delay, failure-rate, exponential-delay) must be specified when restart strategy type is FALLBACK"
             );
         }
     }

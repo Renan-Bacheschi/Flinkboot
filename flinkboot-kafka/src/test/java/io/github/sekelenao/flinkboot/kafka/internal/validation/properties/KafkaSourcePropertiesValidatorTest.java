@@ -10,12 +10,11 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.EnumSource;
 
-import java.lang.reflect.InvocationTargetException;
 import java.util.List;
 import java.util.Map;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.anyString;
@@ -32,25 +31,15 @@ class KafkaSourcePropertiesValidatorTest {
 
         @Test
         @DisplayName("Should throw NullPointerException when properties is null")
-        void shouldThrowWhenPropertiesIsNull() throws Exception {
-            var constructor = KafkaSourcePropertiesValidator.class.getDeclaredConstructor(
-                KafkaSourceProperties.class,
-                ConstraintValidatorContext.class
-            );
-            constructor.setAccessible(true);
+        void shouldThrowWhenPropertiesIsNull() {
             var context = mock(ConstraintValidatorContext.class);
-            var targetException = assertThrows(InvocationTargetException.class, () -> constructor.newInstance(null, context));
-            assertInstanceOf(NullPointerException.class, targetException.getCause());
+            var exception = assertThrows(NullPointerException.class, () -> KafkaSourcePropertiesValidator.validate(null, context));
+            assertEquals("properties must not be null", exception.getMessage());
         }
 
         @Test
         @DisplayName("Should throw NullPointerException when context is null")
-        void shouldThrowWhenContextIsNull() throws Exception {
-            var constructor = KafkaSourcePropertiesValidator.class.getDeclaredConstructor(
-                KafkaSourceProperties.class,
-                ConstraintValidatorContext.class
-            );
-            constructor.setAccessible(true);
+        void shouldThrowWhenContextIsNull() {
             var props = new KafkaSourceProperties(
                 "source",
                 List.of("localhost:9092"),
@@ -62,8 +51,8 @@ class KafkaSourcePropertiesValidatorTest {
                 null,
                 Map.of()
             );
-            var targetException = assertThrows(InvocationTargetException.class, () -> constructor.newInstance(props, null));
-            assertInstanceOf(NullPointerException.class, targetException.getCause());
+            var exception = assertThrows(NullPointerException.class, () -> KafkaSourcePropertiesValidator.validate(props, null));
+            assertEquals("context must not be null", exception.getMessage());
         }
     }
 

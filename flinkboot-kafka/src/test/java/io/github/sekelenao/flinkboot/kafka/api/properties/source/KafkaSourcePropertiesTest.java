@@ -699,10 +699,23 @@ class KafkaSourcePropertiesTest {
 
             assertAll(
                 () -> assertTrue(config.bootstrapServers().isEmpty()),
+                () -> assertThrows(UnsupportedOperationException.class, () -> config.bootstrapServers().add("broker")),
                 () -> assertTrue(config.topicPattern().isEmpty()),
                 () -> assertTrue(config.startingOffsetsTimestamp().isEmpty()),
                 () -> assertTrue(config.startingOffsetsPartitionOffsets().isEmpty()),
-                () -> assertTrue(config.properties().isEmpty())
+                () -> assertThrows(UnsupportedOperationException.class, () -> config.startingOffsetsPartitionOffsets().add(new TopicPartitionOffsetProperties("t", 0, 0L))),
+                () -> assertTrue(config.properties().isEmpty()),
+                () -> assertThrows(UnsupportedOperationException.class, () -> config.properties().put("k", "v"))
+            );
+        }
+
+        @Test
+        @DisplayName("Should return unmodifiable empty list when topics is null")
+        void shouldReturnUnmodifiableTopicsWhenNull() {
+            var config = new KafkaSourceProperties("my-source", null, "my-group", null, null, null, null, null, null);
+            assertAll(
+                () -> assertTrue(config.topics().isEmpty()),
+                () -> assertThrows(UnsupportedOperationException.class, () -> config.topics().add("topic"))
             );
         }
 

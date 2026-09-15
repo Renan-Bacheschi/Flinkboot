@@ -191,7 +191,7 @@ class KafkaSinkPropertiesTest {
             );
             var violations = validator.validate(props);
             assertAll(
-                () -> assertFalse(violations.isEmpty()),
+                () -> assertEquals(2, violations.size()),
                 () -> assertTrue(violations.stream().anyMatch(v -> v.getPropertyPath().toString().equals("transactionalIdPrefix")))
             );
         }
@@ -209,7 +209,7 @@ class KafkaSinkPropertiesTest {
             );
             var violations = validator.validate(props);
             assertAll(
-                () -> assertFalse(violations.isEmpty()),
+                () -> assertEquals(2, violations.size()),
                 () -> assertTrue(violations.stream().anyMatch(v -> v.getPropertyPath().toString().equals("transactionalIdPrefix")))
             );
         }

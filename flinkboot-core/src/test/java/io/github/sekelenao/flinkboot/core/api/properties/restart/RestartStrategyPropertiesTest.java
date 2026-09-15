@@ -328,8 +328,8 @@ class RestartStrategyPropertiesTest {
             var fixedNegativeAttempts = new FixedDelayRestartProperties(-1, Duration.ofSeconds(5));
             var fixedNegativeDelay = new FixedDelayRestartProperties(3, Duration.ofSeconds(-1));
             assertAll(
-                () -> assertFalse(validator.validate(fixedNegativeAttempts).isEmpty()),
-                () -> assertFalse(validator.validate(fixedNegativeDelay).isEmpty())
+                () -> assertEquals(1, validator.validate(fixedNegativeAttempts).size()),
+                () -> assertEquals(1, validator.validate(fixedNegativeDelay).size())
             );
         }
 
@@ -340,9 +340,9 @@ class RestartStrategyPropertiesTest {
             var negativeInterval = new FailureRateRestartProperties(3, Duration.ofSeconds(-1), Duration.ofSeconds(1));
             var negativeDelay = new FailureRateRestartProperties(3, Duration.ofSeconds(5), Duration.ofSeconds(-1));
             assertAll(
-                () -> assertFalse(validator.validate(zeroInterval).isEmpty()),
-                () -> assertFalse(validator.validate(negativeInterval).isEmpty()),
-                () -> assertFalse(validator.validate(negativeDelay).isEmpty())
+                () -> assertEquals(1, validator.validate(zeroInterval).size()),
+                () -> assertEquals(1, validator.validate(negativeInterval).size()),
+                () -> assertEquals(1, validator.validate(negativeDelay).size())
             );
         }
 
@@ -354,10 +354,10 @@ class RestartStrategyPropertiesTest {
             var zeroReset = new ExponentialDelayRestartProperties(Duration.ofSeconds(1), Duration.ofMinutes(1), 2.0, Duration.ZERO, 0.1);
             var negativeInitial = new ExponentialDelayRestartProperties(Duration.ofSeconds(-1), Duration.ofMinutes(1), 2.0, Duration.ofHours(1), 0.1);
             assertAll(
-                () -> assertFalse(validator.validate(zeroInitial).isEmpty()),
-                () -> assertFalse(validator.validate(zeroMax).isEmpty()),
-                () -> assertFalse(validator.validate(zeroReset).isEmpty()),
-                () -> assertFalse(validator.validate(negativeInitial).isEmpty())
+                () -> assertEquals(1, validator.validate(zeroInitial).size()),
+                () -> assertEquals(1, validator.validate(zeroMax).size()),
+                () -> assertEquals(1, validator.validate(zeroReset).size()),
+                () -> assertEquals(1, validator.validate(negativeInitial).size())
             );
         }
 
@@ -367,8 +367,8 @@ class RestartStrategyPropertiesTest {
             var expoInvalidMultiplier = new ExponentialDelayRestartProperties(Duration.ofSeconds(1), Duration.ofMinutes(1), 0.5, Duration.ofHours(1), 0.1);
             var expoInvalidJitter = new ExponentialDelayRestartProperties(Duration.ofSeconds(1), Duration.ofMinutes(1), 2.0, Duration.ofHours(1), 1.5);
             assertAll(
-                () -> assertFalse(validator.validate(expoInvalidMultiplier).isEmpty()),
-                () -> assertFalse(validator.validate(expoInvalidJitter).isEmpty())
+                () -> assertEquals(1, validator.validate(expoInvalidMultiplier).size()),
+                () -> assertEquals(1, validator.validate(expoInvalidJitter).size())
             );
         }
     }
