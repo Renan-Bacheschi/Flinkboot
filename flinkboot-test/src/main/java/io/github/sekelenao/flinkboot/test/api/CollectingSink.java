@@ -57,7 +57,7 @@ public final class CollectingSink<T> implements SinkFunction<T> {
      * Removes all collected elements.
      */
     public void clear() {
-        elementsForSink().clear();
+        ELEMENTS_BY_SINK.remove(sinkId);
     }
 
     @SuppressWarnings("unchecked")
