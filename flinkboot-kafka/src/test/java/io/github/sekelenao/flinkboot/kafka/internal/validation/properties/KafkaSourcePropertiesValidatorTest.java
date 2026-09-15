@@ -26,8 +26,8 @@ import static org.mockito.Mockito.when;
 class KafkaSourcePropertiesValidatorTest {
 
     @Nested
-    @DisplayName("Constructor")
-    class Constructor {
+    @DisplayName("Preconditions")
+    class Preconditions {
 
         @Test
         @DisplayName("Should throw NullPointerException when properties is null")
@@ -358,6 +358,35 @@ class KafkaSourcePropertiesValidatorTest {
             verify(context).disableDefaultConstraintViolation();
             verify(context).buildConstraintViolationWithTemplate("starting-offsets-timestamp must not be specified when starting-offsets is OFFSETS");
             verify(builder).addPropertyNode("startingOffsetsTimestamp");
+            verify(nodeBuilder).addConstraintViolation();
+        }
+
+        @Test
+        @DisplayName("Should fail with partition-offsets violation when OFFSETS mode has both missing partition-offsets and present timestamp")
+        void shouldFailWhenOffsetsModeWithoutPartitionOffsetsAndWithTimestamp() {
+            var context = mock(ConstraintValidatorContext.class);
+            var builder = mock(ConstraintValidatorContext.ConstraintViolationBuilder.class);
+            var nodeBuilder = mock(ConstraintValidatorContext.ConstraintViolationBuilder.NodeBuilderCustomizableContext.class);
+
+            when(context.buildConstraintViolationWithTemplate(anyString())).thenReturn(builder);
+            when(builder.addPropertyNode("startingOffsetsPartitionOffsets")).thenReturn(nodeBuilder);
+
+            var props = new KafkaSourceProperties(
+                "source",
+                List.of("localhost:9092"),
+                "group",
+                List.of("my-topic"),
+                null,
+                KafkaOffsetInitializer.OFFSETS,
+                123456789L,
+                null,
+                Map.of()
+            );
+
+            assertFalse(KafkaSourcePropertiesValidator.validate(props, context));
+            verify(context).disableDefaultConstraintViolation();
+            verify(context).buildConstraintViolationWithTemplate("starting-offsets-partition-offsets is required and cannot be empty when starting-offsets is OFFSETS");
+            verify(builder).addPropertyNode("startingOffsetsPartitionOffsets");
             verify(nodeBuilder).addConstraintViolation();
         }
 

@@ -90,6 +90,15 @@ class StateBackendPropertiesValidatorTest {
         }
 
         @Test
+        @DisplayName("Should pass cross-field validation when state backend is CUSTOM and customClass is empty string")
+        void shouldPassWhenCustomAndCustomClassIsEmptyString() {
+            var context = mock(ConstraintValidatorContext.class);
+            var props = new StateBackendProperties(StateBackendType.CUSTOM, CheckpointStorageType.FILESYSTEM, false, false, "");
+
+            assertTrue(StateBackendPropertiesValidator.validate(props, context));
+        }
+
+        @Test
         @DisplayName("Should fail when state backend is CUSTOM and customClass is null")
         void shouldFailWhenCustomAndCustomClassNull() {
             var context = mock(ConstraintValidatorContext.class);

@@ -53,6 +53,11 @@ public final class StateBackendProperties implements Serializable, ValidatablePr
         this.customClass = customClass;
     }
 
+    @Override
+    public boolean validate(ConstraintValidatorContext context) {
+        return StateBackendPropertiesValidator.validate(this, context);
+    }
+
     /**
      * Returns the optional state backend type.
      *
@@ -96,11 +101,6 @@ public final class StateBackendProperties implements Serializable, ValidatablePr
      */
     public Optional<String> customClass() {
         return Optional.ofNullable(customClass);
-    }
-
-    @Override
-    public boolean validate(ConstraintValidatorContext context) {
-        return StateBackendPropertiesValidator.validate(this, context);
     }
 
     @Override

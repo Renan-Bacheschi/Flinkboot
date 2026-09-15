@@ -4,6 +4,7 @@ import io.github.sekelenao.flinkboot.core.internal.validation.ConfigurationValid
 import io.github.sekelenao.flinkboot.core.api.exception.configuration.ConfigurationValidationException;
 import jakarta.validation.ConstraintValidatorContext;
 import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertAll;
@@ -39,32 +40,37 @@ class ValidatablePropertiesTest {
         }
     }
 
-    @Test
-    @DisplayName("Should pass validation when validate() returns true")
-    void shouldPassWhenValid() {
-        try (var validator = new ConfigurationValidator(10)) {
-            assertDoesNotThrow(() -> validator.validate(new ValidObject()));
-        }
-    }
+    @Nested
+    @DisplayName("validate")
+    class Validate {
 
-    @Test
-    @DisplayName("Should fail validation and attach violation to custom property node")
-    void shouldFailWithCustomPropertyNode() {
-        try (var validator = new ConfigurationValidator(10)) {
-            var ex = assertThrows(ConfigurationValidationException.class, () -> validator.validate(new InvalidObjectWithCustomProperty()));
-            assertAll(
-                () -> assertTrue(ex.getMessage().contains("customField:")),
-                () -> assertTrue(ex.getMessage().contains("custom violation on specific node"))
-            );
+        @Test
+        @DisplayName("Should pass validation when validate() returns true")
+        void shouldPassWhenValid() {
+            try (var validator = new ConfigurationValidator(10)) {
+                assertDoesNotThrow(() -> validator.validate(new ValidObject()));
+            }
         }
-    }
 
-    @Test
-    @DisplayName("Should fail validation with default template when no custom node added")
-    void shouldFailWithDefaultViolation() {
-        try (var validator = new ConfigurationValidator(10)) {
-            var ex = assertThrows(ConfigurationValidationException.class, () -> validator.validate(new InvalidObjectDefaultViolation()));
-            assertTrue(ex.getMessage().contains("Invalid configuration properties"));
+        @Test
+        @DisplayName("Should fail validation and attach violation to custom property node")
+        void shouldFailWithCustomPropertyNode() {
+            try (var validator = new ConfigurationValidator(10)) {
+                var ex = assertThrows(ConfigurationValidationException.class, () -> validator.validate(new InvalidObjectWithCustomProperty()));
+                assertAll(
+                    () -> assertTrue(ex.getMessage().contains("customField:")),
+                    () -> assertTrue(ex.getMessage().contains("custom violation on specific node"))
+                );
+            }
+        }
+
+        @Test
+        @DisplayName("Should fail validation with default template when no custom node added")
+        void shouldFailWithDefaultViolation() {
+            try (var validator = new ConfigurationValidator(10)) {
+                var ex = assertThrows(ConfigurationValidationException.class, () -> validator.validate(new InvalidObjectDefaultViolation()));
+                assertTrue(ex.getMessage().contains("Invalid configuration properties"));
+            }
         }
     }
 }

@@ -2,7 +2,6 @@ package io.github.sekelenao.flinkboot.kafka.api.properties.source;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
-import jakarta.validation.Validation;
 import jakarta.validation.Validator;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -16,6 +15,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import static jakarta.validation.Validation.buildDefaultValidatorFactory;
 import static org.junit.jupiter.api.Assertions.assertAll;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -32,14 +32,14 @@ class KafkaSourcePropertiesTest {
 
     @BeforeEach
     void setUp() {
-        var factory = Validation.buildDefaultValidatorFactory();
+        var factory = buildDefaultValidatorFactory();
         validator = factory.getValidator();
         mapper = new ObjectMapper(new YAMLFactory());
     }
 
     @Nested
     @DisplayName("Constructor")
-    class ConstructorTests {
+    class Constructor {
 
         @Test
         @DisplayName("Should successfully construct with valid topic list arguments")
@@ -119,7 +119,7 @@ class KafkaSourcePropertiesTest {
 
     @Nested
     @DisplayName("Validation")
-    class ValidationTests {
+    class Validation {
 
         @Test
         @DisplayName("Should fail validation when both topics and topic-pattern are configured")
@@ -374,29 +374,33 @@ class KafkaSourcePropertiesTest {
         }
 
         @Test
-        @DisplayName("Should fail validation when non-TIMESTAMP/OFFSETS strategy has extra parameters")
-        void shouldFailWhenExtraParametersProvidedForSimpleStrategy() {
-            var propsTimestamp = new KafkaSourceProperties(
+        @DisplayName("Should fail validation when starting-offsets is EARLIEST and timestamp is provided")
+        void shouldFailWhenTimestampProvidedForEarliestStrategy() {
+            var props = new KafkaSourceProperties(
                 "my-source", List.of("localhost:9092"), "my-group", List.of("topic-a"), null,
                 KafkaOffsetInitializer.EARLIEST, 1000L, null, null
             );
-            var violationsTimestamp = validator.validate(propsTimestamp);
+            var violations = validator.validate(props);
             assertAll(
-                () -> assertEquals(1, violationsTimestamp.size()),
-                () -> assertTrue(violationsTimestamp.stream().anyMatch(v ->
+                () -> assertEquals(1, violations.size()),
+                () -> assertTrue(violations.stream().anyMatch(v ->
                     v.getPropertyPath().toString().equals("startingOffsetsTimestamp")
                         && v.getMessage().equals("starting-offsets-timestamp must not be specified when starting-offsets is EARLIEST")
                 ))
             );
+        }
 
-            var propsOffsets = new KafkaSourceProperties(
+        @Test
+        @DisplayName("Should fail validation when starting-offsets is LATEST and partition offsets are provided")
+        void shouldFailWhenPartitionOffsetsProvidedForLatestStrategy() {
+            var props = new KafkaSourceProperties(
                 "my-source", List.of("localhost:9092"), "my-group", List.of("topic-a"), null,
                 KafkaOffsetInitializer.LATEST, null, List.of(new TopicPartitionOffsetProperties("topic-a", 0, 100L)), null
             );
-            var violationsOffsets = validator.validate(propsOffsets);
+            var violations = validator.validate(props);
             assertAll(
-                () -> assertEquals(1, violationsOffsets.size()),
-                () -> assertTrue(violationsOffsets.stream().anyMatch(v ->
+                () -> assertEquals(1, violations.size()),
+                () -> assertTrue(violations.stream().anyMatch(v ->
                     v.getPropertyPath().toString().equals("startingOffsetsPartitionOffsets")
                         && v.getMessage().equals("starting-offsets-partition-offsets must not be specified when starting-offsets is LATEST")
                 ))
@@ -680,7 +684,7 @@ class KafkaSourcePropertiesTest {
 
     @Nested
     @DisplayName("Getters")
-    class GettersTests {
+    class Getters {
 
         @Test
         @DisplayName("Should return immutable collections and empty optionals when defaulted")
@@ -766,7 +770,7 @@ class KafkaSourcePropertiesTest {
 
     @Nested
     @DisplayName("Deserialization")
-    class DeserializationTests {
+    class Deserialization {
 
         @Test
         @DisplayName("Should deserialize from YAML with topic list")
@@ -873,7 +877,7 @@ class KafkaSourcePropertiesTest {
 
     @Nested
     @DisplayName("Equals and HashCode")
-    class EqualsAndHashCodeTests {
+    class EqualsAndHashCode {
 
         @Test
         @DisplayName("Should satisfy reflexive and symmetric equality")

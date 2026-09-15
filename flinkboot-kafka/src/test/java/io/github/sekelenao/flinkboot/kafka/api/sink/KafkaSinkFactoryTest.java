@@ -26,7 +26,7 @@ class KafkaSinkFactoryTest {
 
     @Nested
     @DisplayName("supplyFor & supplyBuilderFor")
-    class SupplyTests {
+    class Supply {
 
         @Test
         @DisplayName("Should successfully build KafkaSink and KafkaSinkBuilder with default configuration")
@@ -58,7 +58,10 @@ class KafkaSinkFactoryTest {
                 null
             );
 
-            assertNotNull(KafkaSinkFactory.supplyFor(config, TEST_SCHEMA));
+            assertAll(
+                () -> assertNotNull(KafkaSinkFactory.supplyFor(config, TEST_SCHEMA)),
+                () -> assertNotNull(KafkaSinkFactory.supplyBuilderFor(config, TEST_SCHEMA))
+            );
         }
 
         @ParameterizedTest

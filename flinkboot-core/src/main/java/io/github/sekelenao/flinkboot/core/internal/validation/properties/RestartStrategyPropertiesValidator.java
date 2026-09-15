@@ -30,7 +30,7 @@ public final class RestartStrategyPropertiesValidator {
             case FIXED_DELAY: return validateFixedDelay();
             case FAILURE_RATE: return validateFailureRate();
             case EXPONENTIAL_DELAY: return validateExponentialDelay();
-            default: return true;
+            default: throw new IllegalStateException("Unhandled RestartStrategyType: " + type);
         }
     }
 

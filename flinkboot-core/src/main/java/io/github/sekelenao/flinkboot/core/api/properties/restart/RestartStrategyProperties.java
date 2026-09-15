@@ -55,6 +55,11 @@ public final class RestartStrategyProperties implements ValidatableProperties, S
         this.exponentialDelay = exponentialDelay;
     }
 
+    @Override
+    public boolean validate(ConstraintValidatorContext context) {
+        return RestartStrategyPropertiesValidator.validate(this, context);
+    }
+
     /**
      * Returns the optional restart strategy type.
      *
@@ -89,11 +94,6 @@ public final class RestartStrategyProperties implements ValidatableProperties, S
      */
     public Optional<ExponentialDelayRestartProperties> exponentialDelay() {
         return Optional.ofNullable(exponentialDelay);
-    }
-
-    @Override
-    public boolean validate(ConstraintValidatorContext context) {
-        return RestartStrategyPropertiesValidator.validate(this, context);
     }
 
 
