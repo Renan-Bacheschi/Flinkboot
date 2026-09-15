@@ -15,9 +15,12 @@ import java.util.concurrent.CopyOnWriteArrayList;
  * @param <T> the type of elements collected by this sink
  */
 @SuppressWarnings("deprecation")
-public final class CollectingSink<T> implements SinkFunction<T> {
+public final class CollectingSink<T> implements SinkFunction<T>, AutoCloseable {
 
-    private static final Map<UUID, List<Object>> ELEMENTS_BY_SINK = new ConcurrentHashMap<>();
+    private static final long serialVersionUID = 1L;
+
+    private static final Map<UUID, List<Object>> ELEMENTS_BY_SINK =
+            new ConcurrentHashMap<>();
 
     private final UUID sinkId = UUID.randomUUID();
 
@@ -58,6 +61,11 @@ public final class CollectingSink<T> implements SinkFunction<T> {
      */
     public void clear() {
         ELEMENTS_BY_SINK.remove(sinkId);
+    }
+
+    @Override
+    public void close() {
+        clear();
     }
 
     @SuppressWarnings("unchecked")
