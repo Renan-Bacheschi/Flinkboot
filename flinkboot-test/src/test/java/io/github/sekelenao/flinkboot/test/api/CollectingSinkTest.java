@@ -1,5 +1,6 @@
 package io.github.sekelenao.flinkboot.test.api;
 
+import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -34,6 +35,23 @@ class CollectingSinkTest {
             assertAll(
                 () -> assertNotNull(sink),
                 () -> assertEquals(List.of("event-1", "event-2"), sink.elements())
+            );
+        }
+
+        @Test
+        @DisplayName("Should collect elements from a Flink stream")
+        void shouldCollectElementsFromFlinkStream() throws Exception {
+            var env = StreamExecutionEnvironment.getExecutionEnvironment();
+            var sink = CollectingSink.<String>create();
+
+            env.fromElements("event-1", "event-2").addSink(sink);
+            env.execute();
+
+            var elements = sink.elements();
+
+            assertAll(
+                () -> assertEquals(2, elements.size()),
+                () -> assertTrue(elements.containsAll(List.of("event-1", "event-2")))
             );
         }
     }

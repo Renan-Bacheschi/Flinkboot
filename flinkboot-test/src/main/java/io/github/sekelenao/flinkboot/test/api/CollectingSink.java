@@ -3,7 +3,10 @@ package io.github.sekelenao.flinkboot.test.api;
 import org.apache.flink.streaming.api.functions.sink.SinkFunction;
 
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
+import java.util.UUID;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
 
 /**
@@ -14,7 +17,9 @@ import java.util.concurrent.CopyOnWriteArrayList;
 @SuppressWarnings("deprecation")
 public final class CollectingSink<T> implements SinkFunction<T> {
 
-    private final List<T> elements = new CopyOnWriteArrayList<>();
+    private static final Map<UUID, List<Object>> ELEMENTS_BY_SINK = new ConcurrentHashMap<>();
+
+    private final UUID sinkId = UUID.randomUUID();
 
     private CollectingSink() {
     }
@@ -36,7 +41,7 @@ public final class CollectingSink<T> implements SinkFunction<T> {
      */
     @Override
     public void invoke(T value) {
-        elements.add(Objects.requireNonNull(value, "value must not be null"));
+        elementsForSink().add(Objects.requireNonNull(value, "value must not be null"));
     }
 
     /**
@@ -45,13 +50,21 @@ public final class CollectingSink<T> implements SinkFunction<T> {
      * @return the collected elements
      */
     public List<T> elements() {
-        return List.copyOf(elements);
+        return List.copyOf(elementsForSink());
     }
 
     /**
      * Removes all collected elements.
      */
     public void clear() {
-        elements.clear();
+        elementsForSink().clear();
+    }
+
+    @SuppressWarnings("unchecked")
+    private List<T> elementsForSink() {
+        return (List<T>) (List<?>) ELEMENTS_BY_SINK.computeIfAbsent(
+            sinkId,
+            ignored -> new CopyOnWriteArrayList<>()
+        );
     }
 }
