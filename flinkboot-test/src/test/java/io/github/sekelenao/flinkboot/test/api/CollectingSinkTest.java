@@ -44,7 +44,9 @@ class CollectingSinkTest {
             var env = StreamExecutionEnvironment.getExecutionEnvironment();
             var sink = CollectingSink.<String>create();
 
-            env.fromElements("event-1", "event-2").addSink(sink);
+            env.fromElements("event-1", "event-2")
+                    .addSink(sink)
+                    .setParallelism(2);
             env.execute();
 
             var elements = sink.elements();
