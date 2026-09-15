@@ -2,8 +2,10 @@ package io.github.sekelenao.flinkboot.core.api.properties.execution;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
-import io.github.sekelenao.flinkboot.core.api.exception.configuration.InvalidExecutionPropertiesException;
+import io.github.sekelenao.flinkboot.core.api.validation.ValidatableProperties;
 import io.github.sekelenao.flinkboot.core.internal.annotation.Generated;
+import io.github.sekelenao.flinkboot.core.internal.validation.properties.ExecutionPropertiesValidator;
+import jakarta.validation.ConstraintValidatorContext;
 import jakarta.validation.constraints.Positive;
 import org.hibernate.validator.constraints.time.DurationMin;
 
@@ -17,7 +19,7 @@ import java.util.OptionalInt;
  * Configuration properties controlling Flink execution runtime behaviors, parallelism,
  * buffer timeouts, watermark intervals, and object reuse.
  */
-public final class ExecutionProperties implements Serializable {
+public final class ExecutionProperties implements ValidatableProperties, Serializable {
 
     private static final long serialVersionUID = 1L;
 
@@ -62,15 +64,11 @@ public final class ExecutionProperties implements Serializable {
         this.bufferTimeout = bufferTimeout;
         this.autoWatermarkInterval = autoWatermarkInterval;
         this.objectReuse = objectReuse;
-        validate();
     }
 
-    private void validate() {
-        if (parallelism != null && maxParallelism != null && parallelism > maxParallelism) {
-            throw new InvalidExecutionPropertiesException(
-                "parallelism (" + parallelism + ") cannot exceed max-parallelism (" + maxParallelism + ")"
-            );
-        }
+    @Override
+    public boolean validate(ConstraintValidatorContext context) {
+        return ExecutionPropertiesValidator.validate(this, context);
     }
 
     /**
