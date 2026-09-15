@@ -2,7 +2,7 @@ package io.github.sekelenao.flinkboot.core.api.properties.execution;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
-import io.github.sekelenao.flinkboot.core.api.exception.configuration.InvalidExecutionPropertiesException;
+
 import jakarta.validation.ConstraintViolation;
 import jakarta.validation.Validation;
 import jakarta.validation.Validator;
@@ -181,16 +181,17 @@ class ExecutionPropertiesTest {
         }
 
         @Test
-        @DisplayName("Should throw InvalidExecutionPropertiesException when parallelism exceeds max-parallelism")
-        void shouldThrowExceptionWhenParallelismExceedsMaxParallelism() {
-            var exception = assertThrows(
-                InvalidExecutionPropertiesException.class,
-                () -> new ExecutionProperties(null, 16, 8, null, null, null)
-            );
+        @DisplayName("Should fail validation when parallelism exceeds max-parallelism")
+        void shouldFailValidationWhenParallelismExceedsMaxParallelism() {
+            var config = new ExecutionProperties(null, 16, 8, null, null, null);
+            var violations = validator.validate(config);
 
-            assertEquals(
-                "parallelism (16) cannot exceed max-parallelism (8)",
-                exception.getMessage()
+            assertAll(
+                () -> assertEquals(1, violations.size()),
+                () -> assertTrue(violations.stream().anyMatch(v ->
+                    v.getPropertyPath().toString().equals("parallelism") &&
+                    v.getMessage().equals("parallelism (16) cannot exceed max-parallelism (8)")
+                ))
             );
         }
     }
