@@ -2,7 +2,7 @@ package io.github.sekelenao.flinkboot.core.api;
 
 import com.fasterxml.jackson.dataformat.yaml.YAMLMapper;
 import io.github.sekelenao.flinkboot.core.api.exception.configuration.ConfigurationValidationException;
-import io.github.sekelenao.flinkboot.core.api.exception.configuration.YamlParsingException;
+import io.github.sekelenao.flinkboot.core.api.exception.parsing.YamlParsingException;
 import io.github.sekelenao.flinkboot.core.api.properties.JobProperties;
 import io.github.sekelenao.flinkboot.core.api.resource.Resource;
 import io.github.sekelenao.flinkboot.core.internal.execution.ExecutionEnvironmentFactory;

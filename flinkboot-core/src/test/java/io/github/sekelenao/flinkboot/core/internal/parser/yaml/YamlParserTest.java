@@ -10,8 +10,8 @@ import com.fasterxml.jackson.databind.JsonDeserializer;
 import com.fasterxml.jackson.databind.module.SimpleModule;
 import com.fasterxml.jackson.dataformat.yaml.YAMLMapper;
 import io.github.sekelenao.flinkboot.core.api.exception.configuration.ConfigurationValidationException;
-import io.github.sekelenao.flinkboot.core.api.exception.configuration.UnresolvedPropertyPlaceholderException;
-import io.github.sekelenao.flinkboot.core.api.exception.configuration.YamlParsingException;
+import io.github.sekelenao.flinkboot.core.api.exception.parsing.UnresolvedPropertyPlaceholderException;
+import io.github.sekelenao.flinkboot.core.api.exception.parsing.YamlParsingException;
 import io.github.sekelenao.flinkboot.core.api.properties.JobProperties;
 import io.github.sekelenao.flinkboot.core.internal.startup.EnvVarResolver;
 import jakarta.validation.Valid;
@@ -50,6 +50,7 @@ class YamlParserTest {
     private static final ParserFeatures STANDARD_FEATURES = ParserFeatures.builder()
         .permitOverride(false)
         .listMerging(false)
+        .disableValidation(false)
         .validationCapacity(10)
         .build();
 
@@ -151,6 +152,68 @@ class YamlParserTest {
     }
 
     @Nested
+    @DisplayName("Constructor")
+    class Constructor {
+
+        @Test
+        @DisplayName("Should create instance with custom YAMLMapper and ParserFeatures")
+        void shouldCreateInstanceWithCustomMapperAndFeatures() {
+            var mapper = new YAMLMapper();
+            var parser = new YamlParser(mapper, STANDARD_FEATURES);
+            assertNotNull(parser);
+            assertDoesNotThrow(parser::close);
+        }
+
+        @Test
+        @DisplayName("Should create instance with custom YAMLMapper, ParserFeatures and PlaceholderResolver")
+        void shouldCreateInstanceWithCustomMapperFeaturesAndResolver() {
+            var mapper = new YAMLMapper();
+            var resolver = new PlaceholderResolver(new EnvVarResolver(key -> null));
+            var parser = new YamlParser(mapper, STANDARD_FEATURES, resolver);
+            assertNotNull(parser);
+            assertDoesNotThrow(parser::close);
+        }
+
+        @Test
+        @DisplayName("Should parse and convert successfully when created with custom YAMLMapper")
+        void shouldParseSuccessfullyWithCustomMapper() {
+            var mapper = new YAMLMapper();
+            var yaml = "name: \"CustomMapperApp\"\nvalue: 99\n";
+            try (var parser = new YamlParser(mapper, STANDARD_FEATURES)) {
+                parser.parse(new ByteArrayInputStream(yaml.getBytes(StandardCharsets.UTF_8)));
+                var config = parser.convertTo(TestConfig.class);
+                assertAll(
+                    () -> assertNotNull(config),
+                    () -> assertEquals("CustomMapperApp", config.name()),
+                    () -> assertEquals(99, config.value())
+                );
+            }
+        }
+
+        @Test
+        @DisplayName("Should throw NullPointerException when constructor arguments are null")
+        void shouldThrowExceptionWhenConstructorArgsAreNull() {
+            var mapper = new YAMLMapper();
+            var resolver = new PlaceholderResolver(new EnvVarResolver(key -> null));
+            Consumer<YAMLMapper.Builder> customizer = builder -> {};
+
+            assertAll(
+                () -> assertThrows(NullPointerException.class, () -> new YamlParser((ParserFeatures) null)),
+                () -> assertThrows(NullPointerException.class, () -> new YamlParser((Consumer<YAMLMapper.Builder>) null, STANDARD_FEATURES)),
+                () -> assertThrows(NullPointerException.class, () -> new YamlParser(customizer, null)),
+                () -> assertThrows(NullPointerException.class, () -> new YamlParser((Consumer<YAMLMapper.Builder>) null, STANDARD_FEATURES, resolver)),
+                () -> assertThrows(NullPointerException.class, () -> new YamlParser(customizer, null, resolver)),
+                () -> assertThrows(NullPointerException.class, () -> new YamlParser(customizer, STANDARD_FEATURES, null)),
+                () -> assertThrows(NullPointerException.class, () -> new YamlParser((YAMLMapper) null, STANDARD_FEATURES)),
+                () -> assertThrows(NullPointerException.class, () -> new YamlParser(mapper, null)),
+                () -> assertThrows(NullPointerException.class, () -> new YamlParser((YAMLMapper) null, STANDARD_FEATURES, resolver)),
+                () -> assertThrows(NullPointerException.class, () -> new YamlParser(mapper, null, resolver)),
+                () -> assertThrows(NullPointerException.class, () -> new YamlParser(mapper, STANDARD_FEATURES, null))
+            );
+        }
+    }
+
+    @Nested
     @DisplayName("Parse")
     class Parse {
 
@@ -245,7 +308,7 @@ class YamlParserTest {
             var baseYaml = "name: \"BaseApp\"\nvalue: 42\n";
             var overrideYaml = "value: 100\n";
 
-            var features = ParserFeatures.builder().permitOverride(true).listMerging(false).validationCapacity(10).build();
+            var features = ParserFeatures.builder().permitOverride(true).listMerging(false).disableValidation(false).validationCapacity(10).build();
             try (var parser = new YamlParser(features)) {
                 parser.parse(new ByteArrayInputStream(baseYaml.getBytes(StandardCharsets.UTF_8)));
                 parser.parse(new ByteArrayInputStream(overrideYaml.getBytes(StandardCharsets.UTF_8)));
@@ -296,6 +359,50 @@ class YamlParserTest {
         }
 
         @Test
+        @DisplayName("Should not throw ConfigurationValidationException when validation is disabled")
+        void shouldNotThrowWhenValidationIsDisabled() {
+            var yamlContent = "name: \"\"\nvalue: 0\n";
+            var stream = new ByteArrayInputStream(yamlContent.getBytes(StandardCharsets.UTF_8));
+            var features = ParserFeatures.builder()
+                .permitOverride(false)
+                .listMerging(false)
+                .disableValidation(true)
+                .validationCapacity(10)
+                .build();
+
+            try (var parser = new YamlParser(features)) {
+                parser.parse(stream);
+                var config = parser.convertTo(TestConfig.class);
+                assertAll(
+                    () -> assertNotNull(config),
+                    () -> assertEquals("", config.name()),
+                    () -> assertEquals(0, config.value())
+                );
+            }
+        }
+
+        @Test
+        @DisplayName("Should truncate validation errors according to configured validationCapacity")
+        void shouldTruncateValidationErrorsAccordingToValidationCapacity() {
+            var yaml = "name: \"\"\nvalue: 0\n";
+            var features = ParserFeatures.builder()
+                .permitOverride(false)
+                .listMerging(false)
+                .disableValidation(false)
+                .validationCapacity(1)
+                .build();
+
+            try (var parser = new YamlParser(features)) {
+                parser.parse(new ByteArrayInputStream(yaml.getBytes(StandardCharsets.UTF_8)));
+                var exception = assertThrows(ConfigurationValidationException.class, () -> parser.convertTo(TestConfig.class));
+                assertAll(
+                    () -> assertTrue(exception.getMessage().contains("violation(s):")),
+                    () -> assertTrue(exception.getMessage().contains("... and 1 more violation(s)"))
+                );
+            }
+        }
+
+        @Test
         @DisplayName("Should throw NullPointerException when source or class is null")
         void shouldThrowExceptionWhenParamsAreNull() {
             try (var parser = new YamlParser(STANDARD_FEATURES)) {
@@ -338,6 +445,54 @@ class YamlParserTest {
             var stream = new ByteArrayInputStream(yamlContent.getBytes(StandardCharsets.UTF_8));
             try (var parser = new YamlParser(STANDARD_FEATURES)) {
                 assertDoesNotThrow(() -> parser.parse(stream));
+            }
+        }
+
+        @ParameterizedTest
+        @ValueSource(strings = {
+            " \n ",
+            "   \n\n   ",
+            "# Only comments\n",
+            "# First comment\n# Second comment\n"
+        })
+        @DisplayName("Should silently ignore whitespace-only and comments-only YAML")
+        void shouldSilentlyIgnoreWhitespaceOnlyAndCommentsOnlyYaml(String yamlContent) {
+            var stream = new ByteArrayInputStream(yamlContent.getBytes(StandardCharsets.UTF_8));
+            try (var parser = new YamlParser(STANDARD_FEATURES)) {
+                assertDoesNotThrow(() -> parser.parse(stream));
+            }
+        }
+
+        @Test
+        @DisplayName("Should throw YamlParsingException when whitespace-only YAML contains tab characters")
+        void shouldThrowExceptionWhenWhitespaceOnlyYamlContainsTabs() {
+            var yamlContent = " \n\t ";
+            var stream = new ByteArrayInputStream(yamlContent.getBytes(StandardCharsets.UTF_8));
+            try (var parser = new YamlParser(STANDARD_FEATURES)) {
+                assertThrows(YamlParsingException.class, () -> parser.parse(stream));
+            }
+        }
+
+        @ParameterizedTest
+        @ValueSource(strings = {
+            " \n ",
+            "   \n\n   ",
+            "# Only comments\n",
+            "# First comment\n# Second comment\n"
+        })
+        @DisplayName("Should preserve previously parsed configuration when parsing whitespace-only or comments-only YAML")
+        void shouldPreserveConfigurationWhenParsingWhitespaceOnlyOrCommentsOnlyYaml(String yamlContent) {
+            var baseYaml = "name: \"Flink Job\"\nvalue: 42\n";
+            try (var parser = new YamlParser(STANDARD_FEATURES)) {
+                parser.parse(new ByteArrayInputStream(baseYaml.getBytes(StandardCharsets.UTF_8)));
+                var stream = new ByteArrayInputStream(yamlContent.getBytes(StandardCharsets.UTF_8));
+                assertDoesNotThrow(() -> parser.parse(stream));
+                var config = parser.convertTo(TestConfig.class);
+                assertAll(
+                    () -> assertNotNull(config),
+                    () -> assertEquals("Flink Job", config.name()),
+                    () -> assertEquals(42, config.value())
+                );
             }
         }
 
@@ -386,7 +541,7 @@ class YamlParserTest {
             var baseYaml = "items:\n  - \"item1\"\n  - \"item2\"\n";
             var overrideYaml = "items:\n  - \"item3\"\n";
 
-            var features = ParserFeatures.builder().permitOverride(false).listMerging(true).validationCapacity(10).build();
+            var features = ParserFeatures.builder().permitOverride(false).listMerging(true).disableValidation(false).validationCapacity(10).build();
             try (var parser = new YamlParser(features)) {
                 parser.parse(new ByteArrayInputStream(baseYaml.getBytes(StandardCharsets.UTF_8)));
                 parser.parse(new ByteArrayInputStream(overrideYaml.getBytes(StandardCharsets.UTF_8)));
@@ -407,7 +562,7 @@ class YamlParserTest {
         @Test
         @DisplayName("With permitOverride=false and listMerging=false: should throw exception on any override or list merge")
         void shouldThrowExceptionOnAnyOverrideOrListMerge() {
-            var features = ParserFeatures.builder().permitOverride(false).listMerging(false).validationCapacity(10).build();
+            var features = ParserFeatures.builder().permitOverride(false).listMerging(false).disableValidation(false).validationCapacity(10).build();
             var yaml1 = "name: \"Base\"\nvalue: 42\n";
             var yaml2 = "value: 100\n";
             var yamlList1 = "items:\n  - \"a\"\n";
@@ -429,7 +584,7 @@ class YamlParserTest {
         @Test
         @DisplayName("With permitOverride=true and listMerging=false: should override scalars and replace lists")
         void shouldOverrideScalarsAndReplaceLists() {
-            var features = ParserFeatures.builder().permitOverride(true).listMerging(false).validationCapacity(10).build();
+            var features = ParserFeatures.builder().permitOverride(true).listMerging(false).disableValidation(false).validationCapacity(10).build();
             var yaml1 = "name: \"Base\"\nvalue: 42\n";
             var yaml2 = "value: 100\n";
             var yamlList1 = "items:\n  - \"a\"\n";
@@ -460,7 +615,7 @@ class YamlParserTest {
         @Test
         @DisplayName("With permitOverride=false and listMerging=true: should throw on scalar override but append lists")
         void shouldThrowOnScalarOverrideButAppendLists() {
-            var features = ParserFeatures.builder().permitOverride(false).listMerging(true).validationCapacity(10).build();
+            var features = ParserFeatures.builder().permitOverride(false).listMerging(true).disableValidation(false).validationCapacity(10).build();
             var yaml1 = "name: \"Base\"\nvalue: 42\n";
             var yaml2 = "value: 100\n";
             var yamlList1 = "items:\n  - \"a\"\n";
@@ -486,7 +641,7 @@ class YamlParserTest {
         @Test
         @DisplayName("With permitOverride=true and listMerging=true: should override scalars and append lists")
         void shouldOverrideScalarsAndAppendLists() {
-            var features = ParserFeatures.builder().permitOverride(true).listMerging(true).validationCapacity(10).build();
+            var features = ParserFeatures.builder().permitOverride(true).listMerging(true).disableValidation(false).validationCapacity(10).build();
             var yamlScalar1 = "name: \"Base\"\nvalue: 42\n";
             var yamlScalar2 = "value: 100\n";
             var yamlList1 = "items:\n  - \"a\"\n";
@@ -520,6 +675,7 @@ class YamlParserTest {
             var features = ParserFeatures.builder()
                 .permitOverride(true)
                 .listMerging(true)
+                .disableValidation(false)
                 .validationCapacity(10)
                 .build();
 
@@ -606,7 +762,7 @@ class YamlParserTest {
 
     @Nested
     @DisplayName("Java Date and Time Types")
-    class JavaDateTimeTests {
+    class JavaDateTime {
 
         @Test
         @DisplayName("Should successfully parse Duration, Instant and LocalDate from YAML")
@@ -631,7 +787,7 @@ class YamlParserTest {
 
     @Nested
     @DisplayName("Placeholder Resolution")
-    class PlaceholderResolutionTests {
+    class PlaceholderResolution {
 
         @Test
         @DisplayName("Should resolve placeholders in scalar fields from environment variables")

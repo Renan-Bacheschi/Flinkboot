@@ -9,6 +9,7 @@ import org.apache.flink.configuration.Configuration;
 import org.apache.flink.configuration.StateBackendOptions;
 import org.apache.flink.configuration.StateLatencyTrackOptions;
 
+import java.util.Locale;
 import java.util.Objects;
 
 public final class StateBackendCustomizer implements EnvironmentCustomizer {
@@ -28,7 +29,6 @@ public final class StateBackendCustomizer implements EnvironmentCustomizer {
     private void apply(StateBackendProperties stateConfig) {
         stateConfig.type().ifPresent(type -> this.applyType(type, stateConfig));
         stateConfig.checkpointStorage().ifPresent(this::applyCheckpointStorage);
-        stateConfig.storagePath().ifPresent(this::applyStoragePath);
         stateConfig.incremental().ifPresent(this::applyIncremental);
         stateConfig.latencyTracking().ifPresent(this::applyLatencyTracking);
     }
@@ -51,12 +51,8 @@ public final class StateBackendCustomizer implements EnvironmentCustomizer {
     }
 
     private void applyCheckpointStorage(CheckpointStorageType checkpointStorage) {
-        var storageName = checkpointStorage.toString().toLowerCase();
+        var storageName = checkpointStorage.toString().toLowerCase(Locale.ROOT);
         toConfigure.set(CheckpointingOptions.CHECKPOINT_STORAGE, storageName);
-    }
-
-    private void applyStoragePath(String storagePath) {
-        toConfigure.set(CheckpointingOptions.CHECKPOINTS_DIRECTORY, storagePath);
     }
 
     private void applyIncremental(boolean incremental) {

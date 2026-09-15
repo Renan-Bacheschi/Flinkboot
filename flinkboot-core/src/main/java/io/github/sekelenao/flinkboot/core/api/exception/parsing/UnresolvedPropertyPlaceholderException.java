@@ -1,4 +1,4 @@
-package io.github.sekelenao.flinkboot.core.api.exception.configuration;
+package io.github.sekelenao.flinkboot.core.api.exception.parsing;
 
 /**
  * Exception thrown when an environment variable placeholder in YAML configuration cannot be resolved.

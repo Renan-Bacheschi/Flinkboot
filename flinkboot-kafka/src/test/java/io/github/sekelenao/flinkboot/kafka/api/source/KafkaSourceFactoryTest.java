@@ -1,6 +1,5 @@
 package io.github.sekelenao.flinkboot.kafka.api.source;
 
-import io.github.sekelenao.flinkboot.kafka.api.exception.InvalidKafkaSourcePropertiesException;
 import io.github.sekelenao.flinkboot.kafka.api.properties.source.KafkaOffsetInitializer;
 import io.github.sekelenao.flinkboot.kafka.api.properties.source.KafkaSourceProperties;
 import io.github.sekelenao.flinkboot.kafka.api.properties.source.TopicPartitionOffsetProperties;
@@ -53,6 +52,13 @@ class KafkaSourceFactoryTest {
         constructor.setAccessible(true);
         var exception = assertThrows(InvocationTargetException.class, constructor::newInstance);
         assertInstanceOf(AssertionError.class, exception.getCause());
+    }
+
+    @Test
+    @DisplayName("OffsetInitializerMapper.map should throw NullPointerException when properties is null")
+    void shouldThrowWhenPropertiesIsNullInOffsetInitializerMapper() {
+        var ex = assertThrows(NullPointerException.class, () -> OffsetInitializerMapper.map(null));
+        assertEquals("properties must not be null", ex.getMessage());
     }
 
     @Nested

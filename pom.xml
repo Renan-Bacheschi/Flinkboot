@@ -65,13 +65,13 @@
         <dependency.flink-connector-kafka.version>3.4.0-1.20</dependency.flink-connector-kafka.version>
         <dependency.kafka-clients.version>3.9.2</dependency.kafka-clients.version>
         <dependency.fluss.version>0.9.1-incubating</dependency.fluss.version>
-        <dependency.slf4j.version>2.0.18</dependency.slf4j.version>
+        <dependency.slf4j.version>2.0.19</dependency.slf4j.version>
         <dependency.log4j.version>2.26.1</dependency.log4j.version>
 
         <!-- Plugin versions -->
         <plugin.maven.compiler.version>3.16.0</plugin.maven.compiler.version>
         <plugin.maven.enforcer.version>3.6.3</plugin.maven.enforcer.version>
-        <plugin.maven.surefire.version>3.6.0-M1</plugin.maven.surefire.version>
+        <plugin.maven.surefire.version>3.6.0</plugin.maven.surefire.version>
         <plugin.jacoco.version>0.8.15</plugin.jacoco.version>
         <plugin.maven.javadoc.version>3.12.0</plugin.maven.javadoc.version>
         <plugin.maven.source.version>3.4.0</plugin.maven.source.version>

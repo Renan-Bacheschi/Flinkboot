@@ -5,10 +5,11 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Locale;
 import java.util.Map;
-import java.util.NoSuchElementException;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
+
+import io.github.sekelenao.flinkboot.core.api.exception.parsing.CommandLineParsingException;
 
 final class CommandLine {
 
@@ -23,7 +24,7 @@ final class CommandLine {
 
     private static String retrieveValue(String[] args, int keyIndex){
         if(keyIndex + 1 >= args.length){
-            throw new NoSuchElementException("No value found for option: " + args[keyIndex]);
+            throw new CommandLineParsingException("Option '" + args[keyIndex] + "' requires a value.");
         }
         return args[keyIndex + 1];
     }
